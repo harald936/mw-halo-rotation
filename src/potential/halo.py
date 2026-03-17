@@ -1,24 +1,29 @@
 """
-Triaxial NFW dark matter halo with optional figure rotation.
+Triaxial NFW dark matter halo with figure rotation.
 
-The halo has three free parameters controlling its shape and mass:
-    v_h  : velocity scale (km/s) — sets the halo mass normalization
-           defined as the halo's circular velocity at its scale radius
-    r_h  : scale radius (kpc) — where the density profile transitions
-    q_z  : vertical axis ratio (z/x) — <1 oblate, >1 prolate
+The halo has four free parameters:
+    v_h     : velocity scale (km/s) — sets the halo mass
+    r_h     : scale radius (kpc)
+    q_z     : vertical axis ratio (z/x) — <1 oblate, >1 prolate
+    Omega_p : figure rotation rate (km/s/kpc) — tumbling around z-axis
 
-And one free parameter controlling tumbling:
-    Omega_p : figure rotation rate (km/s/kpc) — pattern speed around z-axis
+And one fixed shape parameter:
+    Q_Y     : in-plane axis ratio (y/x) — fixed at 0.9
 
-The in-plane axis ratio is fixed: q_y = 1.0 (axisymmetric in x-y).
-This means the non-sphericity comes only from vertical flattening.
-A future extension could free q_y for full triaxiality.
+The halo is TRIAXIAL: three unequal axes (x != y != z).
+This is essential because rotating an axisymmetric shape (b=1)
+around its symmetry axis produces no observable effect.
+With b=0.9, the in-plane shape is elliptical, so tumbling
+around z changes the gravitational field over time.
 
-At Omega_p = 0, this reduces to a static flattened NFW halo.
+Q_Y=0.9 is consistent with cosmological simulations
+(Vera-Ciro & Helmi 2013, Chua+2019) and with constraints
+from the Sagittarius stream (Law & Majewski 2010).
 
-IMPORTANT: All galpy potentials are constructed WITHOUT ro/vo kwargs,
-so they operate in pure natural units (distances in units of RO,
-velocities in units of VO). This avoids unit-mode confusion.
+At Omega_p = 0, this reduces to a static triaxial NFW halo.
+
+All galpy potentials use pure natural units (no ro/vo in
+constructors) to avoid unit-mode confusion.
 """
 
 import numpy as np
@@ -33,45 +38,33 @@ from galpy.potential import (
 RO = 8.122   # kpc
 VO = 229.0   # km/s
 
+# Fixed in-plane axis ratio
+Q_Y = 0.9    # y/x ratio — makes the halo triaxial
+
 
 def _nfw_amp_from_vh(v_h, r_h):
     """
     Compute galpy NFW amp parameter from physical v_h and r_h.
 
-    v_h is defined as v_circ(r_h) of the spherical NFW.
-    We determine the amp numerically using galpy's own vcirc,
-    ensuring exact consistency with galpy's internal conventions.
-
-    Parameters
-    ----------
-    v_h : float
-        Desired v_circ at r_h, in km/s.
-    r_h : float
-        Scale radius in kpc.
-
-    Returns
-    -------
-    amp : float
-        galpy amp parameter in natural units.
+    v_h is defined as v_circ(r_h) of the spherical-equivalent NFW.
+    Computed numerically using galpy's own vcirc to guarantee
+    exact consistency with galpy's internal conventions.
     """
     a_nat = r_h / RO
-    # vcirc^2 scales linearly with amp, so compute the geometry factor
-    # by evaluating vcirc for amp=1
     nfw_unit = NFWPotential(amp=1.0, a=a_nat)
-    vc_sq_unit = vcirc(nfw_unit, a_nat) ** 2  # vcirc^2(r_h) for amp=1
-    # amp = (v_h / VO)^2 / vc_sq_unit
+    vc_sq_unit = vcirc(nfw_unit, a_nat) ** 2
     return (v_h / VO) ** 2 / vc_sq_unit
 
 
 def build_halo_potential(v_h, r_h, q_z, Omega_p=0.0, pa=0.0):
     """
-    Build a (possibly rotating) flattened NFW halo.
+    Build a triaxial, possibly rotating, NFW halo.
 
     Parameters
     ----------
     v_h : float
-        Halo circular velocity scale in km/s. Defined as the circular
-        velocity at the scale radius for the spherical-equivalent NFW.
+        Halo circular velocity scale in km/s. Defined as v_circ(r_h)
+        for the spherical-equivalent NFW.
     r_h : float
         Halo scale radius in kpc.
     q_z : float
@@ -79,14 +72,12 @@ def build_halo_potential(v_h, r_h, q_z, Omega_p=0.0, pa=0.0):
     Omega_p : float, optional
         Figure rotation rate in km/s/kpc. Default 0 (static).
     pa : float, optional
-        Initial position angle of the halo major axis in radians.
-        Default 0.
+        Initial position angle of halo major axis in radians. Default 0.
 
     Returns
     -------
     pot : galpy Potential instance
-        The halo potential (wrapped in rotation if Omega_p != 0).
-        In pure natural units (no ro/vo attached).
+        Triaxial halo, wrapped in SolidBodyRotation if Omega_p != 0.
     """
     a_nat = r_h / RO
     amp = _nfw_amp_from_vh(v_h, r_h)
@@ -94,14 +85,14 @@ def build_halo_potential(v_h, r_h, q_z, Omega_p=0.0, pa=0.0):
     halo = TriaxialNFWPotential(
         amp=amp,
         a=a_nat,
-        b=1.0,       # q_y = 1 (axisymmetric in-plane)
-        c=q_z,       # q_z = free vertical flattening
+        b=Q_Y,       # in-plane axis ratio — TRIAXIAL
+        c=q_z,       # vertical axis ratio
     )
 
     if Omega_p == 0.0:
         return halo
 
-    # Convert Omega_p from km/s/kpc to galpy natural frequency units (vo/ro)
+    # Convert Omega_p from km/s/kpc to galpy natural frequency (vo/ro)
     omega_nat = Omega_p / (VO / RO)
 
     wrapped = SolidBodyRotationWrapperPotential(

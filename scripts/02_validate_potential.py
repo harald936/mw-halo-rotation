@@ -46,7 +46,7 @@ eV_sym = (eV_minus + eV_plus) / 2  # symmetrized errors
 # -----------------------------------------------------------------------
 # These should produce a reasonable match to the rotation curve.
 # v_h ~ 200 km/s, r_h ~ 16 kpc are typical for the MW NFW halo.
-V_H_FID = 160.0    # km/s — gives V_total(R0) ~ 229 km/s with these baryons
+V_H_FID = 165.0    # km/s — gives V_total(R0) ~ 229 km/s with b=0.9 triaxial halo
 R_H_FID = 16.0     # kpc
 Q_Z_FID = 0.93     # mildly oblate (close to your previous result)
 OMEGA_P_FID = 0.0  # static for validation
@@ -54,11 +54,21 @@ OMEGA_P_FID = 0.0  # static for validation
 # -----------------------------------------------------------------------
 # Helper: compute V_circ in km/s at given R_kpc array
 # -----------------------------------------------------------------------
+N_PHI = 36  # number of azimuthal samples for phi-averaging
+
 def compute_vcirc(pot, R_kpc):
-    """Compute circular velocity in km/s at radii R_kpc."""
-    R_nat = R_kpc / RO  # convert to natural units
-    vc = np.array([vcirc(pot, r) for r in R_nat])
-    return vc * VO  # convert to km/s
+    """Compute phi-averaged circular velocity in km/s at radii R_kpc.
+
+    For non-axisymmetric potentials (triaxial halo), V_circ depends on
+    azimuth. We average V_circ^2 over phi and take the square root.
+    """
+    R_nat = R_kpc / RO
+    phis = np.linspace(0, 2 * np.pi, N_PHI, endpoint=False)
+    vc = np.empty(len(R_nat))
+    for i, r in enumerate(R_nat):
+        vc_sq = np.mean([vcirc(pot, r, phi=p) ** 2 for p in phis])
+        vc[i] = np.sqrt(vc_sq)
+    return vc * VO
 
 
 # -----------------------------------------------------------------------
