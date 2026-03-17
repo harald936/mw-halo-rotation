@@ -20,6 +20,7 @@ results/chains/*.h5
 data/gd1/*.fits
 data/gd1/*.mrt
 data/external/*
+!data/external/kuzma2022_pal5.txt
 
 # IDE
 .vscode/
