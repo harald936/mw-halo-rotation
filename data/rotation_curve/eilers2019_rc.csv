@@ -5,6 +5,7 @@
 # Data: Table 1 (machine-readable from published paper)
 # Source: ~23,000 luminous red giant stars, APOGEE DR14 + Gaia DR2 + 2MASS + WISE
 # Solar parameters used: R0 = 8.122 kpc (Gravity Collaboration 2018), v0 = 229.0 km/s
+# Trimmed to R < 21 kpc (removed 6 points with sigma > 5 km/s)
 R_kpc,Vcirc_kms,eVcirc_minus_kms,eVcirc_plus_kms
 5.27,226.83,1.91,1.90
 5.74,230.80,1.43,1.35
@@ -38,9 +39,3 @@ R_kpc,Vcirc_kms,eVcirc_minus_kms,eVcirc_plus_kms
 19.71,201.91,2.99,2.26
 20.27,199.84,3.15,2.89
 20.78,198.14,3.33,3.37
-21.24,195.30,5.99,6.50
-21.80,213.67,15.38,12.18
-22.14,176.97,28.58,18.57
-22.73,193.11,27.64,19.05
-23.66,176.63,18.67,16.74
-24.82,198.42,6.50,6.12
