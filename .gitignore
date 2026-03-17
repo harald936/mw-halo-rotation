@@ -16,9 +16,8 @@ results/chains/*.npz
 results/chains/*.h5
 *.hdf5
 
-# Data (downloaded separately)
-data/gd1/*.csv
-data/rotation_curve/*.csv
+# Data (large raw files only)
+data/gd1/*.fits
 data/external/*
 
 # IDE
