@@ -70,11 +70,11 @@ print(f"  In gap/spur region [{GAP_SPUR_MIN}, {GAP_SPUR_MAX}]: {n_gap}")
 # 2. Define bin edges
 # ---------------------------------------------------------------------------
 # Create bins only outside the gap/spur region
-phi1_range_left = PHI1_MAX - GAP_SPUR_MAX   # right of gap
-phi1_range_right = GAP_SPUR_MIN - PHI1_MIN  # left of gap
-total_range = phi1_range_left + phi1_range_right
+phi1_range_left_of_gap = GAP_SPUR_MIN - PHI1_MIN   # left of gap: 35 deg
+phi1_range_right_of_gap = PHI1_MAX - GAP_SPUR_MAX  # right of gap: 38 deg
+total_range = phi1_range_left_of_gap + phi1_range_right_of_gap
 
-n_bins_left = int(np.round(N_BINS * phi1_range_right / total_range))
+n_bins_left = int(np.round(N_BINS * phi1_range_left_of_gap / total_range))
 n_bins_right = N_BINS - n_bins_left
 
 edges_left = np.linspace(PHI1_MIN, GAP_SPUR_MIN, n_bins_left + 1)
@@ -228,7 +228,7 @@ for obs_name in ["phi2", "pm1", "pm2"]:
 
 # Bin RV separately (only for stars with RV data)
 print("  Binning rv (where available)...")
-has_rv = df_clean.rv != 0
+has_rv = df_clean.e_rv < 1000
 if has_rv.sum() > 20:
     phi1_rv = phi1[has_rv]
     rv_vals = df_clean.rv.values[has_rv]
@@ -352,12 +352,12 @@ for ax_idx, (obs, label, unit) in enumerate([
 ax = axes[3]
 if "rv" in results:
     # Individual RV stars
-    has_rv_clean = df_clean.rv != 0
+    has_rv_clean = df_clean.e_rv < 1000
     ax.scatter(df_clean.phi1[has_rv_clean], df_clean.rv[has_rv_clean],
                s=8, c="gray", alpha=0.4, rasterized=True)
 
     # Gap/spur RV stars
-    has_rv_gap = df_gap.rv != 0
+    has_rv_gap = df_gap.e_rv < 1000
     if has_rv_gap.sum() > 0:
         ax.scatter(df_gap.phi1[has_rv_gap], df_gap.rv[has_rv_gap],
                    s=8, c=colors["gap"], alpha=0.4, rasterized=True)

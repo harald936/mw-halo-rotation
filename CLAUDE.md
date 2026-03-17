@@ -22,8 +22,9 @@ using GD-1 stellar stream and rotation curve data.
 
 ## Conventions
 - All potentials use galpy units internally
-- Coordinates: Galactocentric frame with R0=8.275 kpc, z_sun=0.0208 kpc
-- Solar motion: (U,V,W) = (11.1, 245.04, 7.25) km/s (Gravity Collab + Reid+2020)
+- Coordinates: Galactocentric frame with R0=8.122 kpc, z_sun=0.0208 kpc
+  (matches Eilers+2019 RC; Gravity Collaboration 2018)
+- Solar motion: (U,V,W) = (11.1, 241.24, 7.25) km/s (Schoenrich+2010 peculiar + v0=229 km/s from Eilers+2019)
 - GD-1 frame: Koposov+2010 rotation matrix
 - GD-1 anchor RV: -133 km/s (not zero)
 

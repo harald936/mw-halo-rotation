@@ -79,16 +79,17 @@ print(f"  PM track outliers (3-sigma): {np.sum(is_pm_outlier)} ({n_pm} new)")
 
 # --- 2c. Radial velocity track outliers ---
 rv = np.array(members["rv"], dtype=float)
-has_rv = rv != 0
+e_rv = np.array(members["e_rv"], dtype=float)
+has_rv = e_rv < 1000  # sentinel: e_rv=10000 means no measurement
+is_rv_outlier = np.zeros(n_initial, dtype=bool)
 if np.sum(has_rv) > 10:
-    phi1_rv = phi1[has_rv]
-    rv_vals = rv[has_rv]
-    coef_rv = np.polyfit(phi1_rv, rv_vals, 3)
-    resid_rv = rv_vals - np.polyval(coef_rv, phi1_rv)
+    # Fit RV track using only clean stars (exclude foreground + PM outliers)
+    clean_rv_mask = has_rv & ~is_foreground & ~is_pm_outlier
+    coef_rv = np.polyfit(phi1[clean_rv_mask], rv[clean_rv_mask], 3)
+    resid_rv = rv[has_rv] - np.polyval(coef_rv, phi1[has_rv])
     std_rv = np.std(resid_rv)
 
     is_rv_outlier_sub = np.abs(resid_rv) > 3 * std_rv
-    is_rv_outlier = np.zeros(n_initial, dtype=bool)
     is_rv_outlier[has_rv] = is_rv_outlier_sub
     flags[is_rv_outlier] |= 4
     n_rv = np.sum(is_rv_outlier & ~is_foreground & ~is_pm_outlier)
@@ -96,7 +97,7 @@ if np.sum(has_rv) > 10:
 
 # --- 2d. Metallicity contaminants ---
 feh = np.array(members["feh"], dtype=float)
-has_feh = feh > -9999
+has_feh = feh > -5  # sentinel: feh=-10000 means no measurement
 is_metal_rich = np.zeros(n_initial, dtype=bool)
 is_metal_rich[has_feh] = feh[has_feh] > -1.5
 flags[is_metal_rich] |= 8
@@ -147,8 +148,8 @@ print(f"\n  Saved cleaned catalog to {outpath}")
 # ---------------------------------------------------------------------------
 # 5. Summary statistics
 # ---------------------------------------------------------------------------
-has_rv_clean = df["rv"] != 0
-has_feh_clean = df["feh"] > -9999
+has_rv_clean = df["e_rv"] < 1000
+has_feh_clean = df["feh"] > -5
 print(f"\n=== Cleaned Catalog Summary ===")
 print(f"  Total members: {len(df)}")
 print(f"  phi1 range: [{df.phi1.min():.1f}, {df.phi1.max():.1f}] deg")
@@ -206,9 +207,9 @@ ax.set_title("PM perpendicular to stream")
 # Panel 4: RV track
 ax = axes[1, 0]
 if np.sum(has_rv) > 10:
-    rv_clean_mask = (df.rv != 0)
+    rv_clean_mask = df["e_rv"] < 1000
     rv_removed = members[~is_clean]
-    rv_removed_mask = np.array(rv_removed["rv"], dtype=float) != 0
+    rv_removed_mask = np.array(rv_removed["e_rv"], dtype=float) < 1000
     if np.sum(rv_removed_mask) > 0:
         ax.scatter(np.array(rv_removed["phi1"], dtype=float)[rv_removed_mask],
                    np.array(rv_removed["rv"], dtype=float)[rv_removed_mask],
@@ -238,9 +239,9 @@ ax.legend(fontsize=8)
 
 # Panel 6: Metallicity
 ax = axes[1, 2]
-feh_clean = df.feh[df.feh > -9999]
+feh_clean = df.feh[df.feh > -5]
 feh_removed_arr = np.array(members["feh"][~is_clean], dtype=float)
-feh_removed_vals = feh_removed_arr[feh_removed_arr > -9999]
+feh_removed_vals = feh_removed_arr[feh_removed_arr > -5]
 if len(feh_clean) > 0:
     ax.hist(feh_clean, bins=30, range=(-4, 0), color="k", alpha=0.5, label="Clean")
 if len(feh_removed_vals) > 0:

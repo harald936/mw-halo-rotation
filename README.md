@@ -15,7 +15,7 @@ src/
   utils/        Coordinate transforms, data loaders
 scripts/        Numbered pipeline steps (01_, 02_, ...)
 notebooks/      Exploration and plotting
-data/           Input data (not tracked in git)
+data/           Input data (processed CSVs tracked; large raw files gitignored)
 results/        Output chains, plots, tables
 paper/          Project plan and manuscript
 tests/          Unit tests

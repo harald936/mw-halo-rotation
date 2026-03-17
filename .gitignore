@@ -18,6 +18,7 @@ results/chains/*.h5
 
 # Data (large raw files only)
 data/gd1/*.fits
+data/gd1/*.mrt
 data/external/*
 
 # IDE
