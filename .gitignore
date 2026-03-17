@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+.venv/
+env/
+
+# Results (large files)
+results/chains/*.npz
+results/chains/*.h5
+*.hdf5
+
+# Data (downloaded separately)
+data/gd1/*.csv
+data/rotation_curve/*.csv
+data/external/*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
