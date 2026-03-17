@@ -54,7 +54,7 @@ OMEGA_P_FID = 0.0  # static for validation
 # -----------------------------------------------------------------------
 # Helper: compute V_circ in km/s at given R_kpc array
 # -----------------------------------------------------------------------
-N_PHI = 36  # number of azimuthal samples for phi-averaging
+N_PHI = 8  # number of azimuthal samples for phi-averaging
 
 def compute_vcirc(pot, R_kpc):
     """Compute phi-averaged circular velocity in km/s at radii R_kpc.

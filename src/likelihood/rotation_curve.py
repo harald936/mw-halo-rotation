@@ -25,7 +25,8 @@ RO = 8.122  # kpc
 VO = 229.0  # km/s
 
 # Phi grid for azimuthal averaging
-_N_PHI = 36
+# 8 samples is sufficient — the triaxial asymmetry is only ~1 km/s
+_N_PHI = 8
 _PHIS = np.linspace(0, 2 * np.pi, _N_PHI, endpoint=False)
 
 

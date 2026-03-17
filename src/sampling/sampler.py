@@ -99,7 +99,7 @@ def initialize_walkers(n_walkers, p0=None, spread=None):
 
 
 def run_sampler(n_walkers=64, n_steps=2000, p0=None, spread=None,
-                backend_file=None, rc_only=False):
+                backend_file=None, rc_only=False, n_cores=None):
     """
     Run the MCMC sampler.
 
@@ -118,12 +118,26 @@ def run_sampler(n_walkers=64, n_steps=2000, p0=None, spread=None,
         stored in memory only.
     rc_only : bool
         If True, use RC-only likelihood (for fast validation).
+    n_cores : int, optional
+        Number of CPU cores for parallel evaluation. Default: all available.
 
     Returns
     -------
     sampler : emcee.EnsembleSampler
     """
+    import multiprocessing as mp
+    from multiprocessing import Pool, cpu_count
+    # macOS Python 3.8+ defaults to 'spawn' which requires pickling
+    # and hangs with galpy C extensions. 'fork' works.
+    try:
+        mp.set_start_method('fork', force=True)
+    except RuntimeError:
+        pass  # already set
+
     n_dim = 4
+
+    if n_cores is None:
+        n_cores = cpu_count()
 
     # Choose posterior function
     log_prob_fn = ln_posterior_rc_only if rc_only else ln_posterior
@@ -140,18 +154,26 @@ def run_sampler(n_walkers=64, n_steps=2000, p0=None, spread=None,
         backend = emcee.backends.HDFBackend(backend_file)
         backend.reset(n_walkers, n_dim)
 
-    sampler = emcee.EnsembleSampler(
-        n_walkers, n_dim, log_prob_fn,
-        moves=moves,
-        backend=backend,
-    )
-
     # Initialize walkers
     pos = initialize_walkers(n_walkers, p0, spread)
 
-    # Run
     print(f"Running MCMC: {n_walkers} walkers, {n_steps} steps, "
-          f"{'RC-only' if rc_only else 'joint'} likelihood")
-    sampler.run_mcmc(pos, n_steps, progress=True)
+          f"{'RC-only' if rc_only else 'joint'} likelihood, {n_cores} cores")
+
+    if n_cores > 1:
+        pool = Pool(n_cores)
+        sampler = emcee.EnsembleSampler(
+            n_walkers, n_dim, log_prob_fn,
+            moves=moves, backend=backend, pool=pool,
+        )
+        sampler.run_mcmc(pos, n_steps, progress=True)
+        pool.close()
+        pool.join()
+    else:
+        sampler = emcee.EnsembleSampler(
+            n_walkers, n_dim, log_prob_fn,
+            moves=moves, backend=backend,
+        )
+        sampler.run_mcmc(pos, n_steps, progress=True)
 
     return sampler
