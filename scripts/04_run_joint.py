@@ -28,13 +28,13 @@ PLOTS = os.path.join(RESULTS, "plots")
 if os.path.exists(CHAIN):
     os.remove(CHAIN)
 
-# Initialize from RC-only posterior (v_h~188, r_h~21.5)
-# with wider spread to explore stream-preferred region too
+# Initialize tightly around the best point found from grid search
+# Narrow spread to match the steep likelihood landscape
 sampler = run_sampler(
-    n_walkers=64, n_steps=5000,
-    p0=[188.0, 21.5, 0.93, 0.05],
-    spread=[15.0, 5.0, 0.15, 0.04],
-    backend_file=CHAIN, rc_only=False, n_cores=8,
+    n_walkers=32, n_steps=5000,
+    p0=[190.0, 15.0, 0.6, 0.05],
+    spread=[2.0, 0.5, 0.02, 0.02],
+    backend_file=CHAIN, rc_only=False, n_cores=1,
 )
 
 chain = sampler.get_chain()
