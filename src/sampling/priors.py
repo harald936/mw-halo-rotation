@@ -21,7 +21,7 @@ PARAM_NAMES = ["v_h", "r_h", "q_z", "Omega_p"]
 PARAM_BOUNDS = {
     "v_h": (100.0, 300.0),      # km/s
     "r_h": (5.0, 40.0),         # kpc
-    "q_z": (0.5, 1.5),          # dimensionless
+    "q_z": (0.5, 2.0),          # dimensionless — widened to avoid boundary effects
     "Omega_p": (0.0, 0.5),      # km/s/kpc
 }
 

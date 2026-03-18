@@ -28,10 +28,12 @@ PLOTS = os.path.join(RESULTS, "plots")
 if os.path.exists(CHAIN):
     os.remove(CHAIN)
 
+# Initialize from RC-only posterior (v_h~188, r_h~21.5)
+# with wider spread to explore stream-preferred region too
 sampler = run_sampler(
     n_walkers=64, n_steps=5000,
-    p0=[170.0, 21.0, 0.93, 0.05],
-    spread=[8.0, 3.0, 0.08, 0.04],
+    p0=[188.0, 21.5, 0.93, 0.05],
+    spread=[15.0, 5.0, 0.15, 0.04],
     backend_file=CHAIN, rc_only=False, n_cores=11,
 )
 

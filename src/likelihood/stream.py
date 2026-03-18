@@ -280,16 +280,26 @@ def ln_likelihood_stream(pot):
     if np.sum(valid) < 10:
         return -1e10
 
-    # Chi-squared
+    # Chi-squared with systematic error floor.
+    # The bootstrap errors are statistical only; the orbit model has
+    # additional systematics (simplified potential, single orbit approx,
+    # anchor point uncertainty). Add in quadrature to prevent the stream
+    # from over-constraining relative to the RC.
+    SYS_PHI2 = 0.5    # deg — systematic floor for sky position
+    SYS_PM = 0.5       # mas/yr — systematic floor for proper motions
+
     chi2 = 0.0
 
     resid_phi2 = _TRACK["phi2_med"].values[valid] - phi2_mod[valid]
-    chi2 += np.sum((resid_phi2 / _TRACK["phi2_err"].values[valid]) ** 2)
+    sigma_phi2 = np.sqrt(_TRACK["phi2_err"].values[valid] ** 2 + SYS_PHI2 ** 2)
+    chi2 += np.sum((resid_phi2 / sigma_phi2) ** 2)
 
     resid_pm1 = _TRACK["pm1_med"].values[valid] - pm1_mod[valid]
-    chi2 += np.sum((resid_pm1 / _TRACK["pm1_err"].values[valid]) ** 2)
+    sigma_pm1 = np.sqrt(_TRACK["pm1_err"].values[valid] ** 2 + SYS_PM ** 2)
+    chi2 += np.sum((resid_pm1 / sigma_pm1) ** 2)
 
     resid_pm2 = _TRACK["pm2_med"].values[valid] - pm2_mod[valid]
-    chi2 += np.sum((resid_pm2 / _TRACK["pm2_err"].values[valid]) ** 2)
+    sigma_pm2 = np.sqrt(_TRACK["pm2_err"].values[valid] ** 2 + SYS_PM ** 2)
+    chi2 += np.sum((resid_pm2 / sigma_pm2) ** 2)
 
     return -0.5 * chi2

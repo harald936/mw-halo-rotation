@@ -152,14 +152,19 @@ def ln_likelihood_pal5(pot):
     if np.sum(valid) < 3:
         return -1e10
 
+    # Systematic error floors (same rationale as GD-1)
+    SYS_PHI2 = 0.3    # deg
+    SYS_PM = 0.3       # mas/yr
+    SYS_RV = 5.0       # km/s
+
     chi2 = 0.0
     chi2 += np.sum((_TRACK["phi2_med"].values[valid] - phi2_mod[valid]) ** 2
-                   / _TRACK["phi2_err"].values[valid] ** 2)
+                   / (_TRACK["phi2_err"].values[valid] ** 2 + SYS_PHI2 ** 2))
     chi2 += np.sum((_TRACK["pm1_med"].values[valid] - pm1_mod[valid]) ** 2
-                   / _TRACK["pm1_err"].values[valid] ** 2)
+                   / (_TRACK["pm1_err"].values[valid] ** 2 + SYS_PM ** 2))
     chi2 += np.sum((_TRACK["pm2_med"].values[valid] - pm2_mod[valid]) ** 2
-                   / _TRACK["pm2_err"].values[valid] ** 2)
+                   / (_TRACK["pm2_err"].values[valid] ** 2 + SYS_PM ** 2))
     chi2 += np.sum((_TRACK["rv_med"].values[valid] - rv_mod[valid]) ** 2
-                   / _TRACK["rv_err"].values[valid] ** 2)
+                   / (_TRACK["rv_err"].values[valid] ** 2 + SYS_RV ** 2))
 
     return -0.5 * chi2
