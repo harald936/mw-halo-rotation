@@ -21,6 +21,7 @@ data/gd1/*.fits
 data/gd1/*.mrt
 data/external/*
 !data/external/kuzma2022_pal5.txt
+!data/external/s5_pdr1_light.fits
 
 # IDE
 .vscode/
