@@ -83,6 +83,22 @@ def _load_track_data(data_dir=None):
 _TRACK = _load_track_data()
 
 
+def _load_rv_track(data_dir=None):
+    """Load binned GD-1 RV track from DESI cross-match."""
+    if data_dir is None:
+        repo = os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__))))
+        data_dir = os.path.join(repo, "data", "gd1")
+
+    path = os.path.join(data_dir, "gd1_track_rv_desi.csv")
+    if os.path.exists(path):
+        return pd.read_csv(path)
+    return None
+
+
+_RV_TRACK = _load_rv_track()
+
+
 # -----------------------------------------------------------------------
 # Core functions
 # -----------------------------------------------------------------------
@@ -184,15 +200,16 @@ def orbit_to_gd1(orbit, ts):
     phi2 = gd1.phi2.deg
     pm_phi1_cosphi2 = gd1.pm_phi1_cosphi2.value  # mas/yr
     pm_phi2 = gd1.pm_phi2.value  # mas/yr
+    rv = gd1.radial_velocity.to(u.km / u.s).value  # km/s
 
     # Convert pm_phi1_cosphi2 to pm_phi1
     cos_phi2 = np.cos(np.radians(phi2))
     pm1 = pm_phi1_cosphi2 / cos_phi2
 
-    return phi1, phi2, pm1, pm_phi2
+    return phi1, phi2, pm1, pm_phi2, rv
 
 
-def _select_stream_segment(phi1, phi2, pm1, pm2):
+def _select_stream_segment(phi1, phi2, pm1, pm2, rv):
     """
     Select the orbit segment that corresponds to GD-1's stream track.
 
@@ -201,7 +218,7 @@ def _select_stream_segment(phi1, phi2, pm1, pm2):
     phi1 range. We select points with |phi2| < 15 deg.
     """
     near_stream = np.abs(phi2) < 15.0
-    return phi1[near_stream], phi2[near_stream], pm1[near_stream], pm2[near_stream]
+    return phi1[near_stream], phi2[near_stream], pm1[near_stream], pm2[near_stream], rv[near_stream]
 
 
 def _interpolate_track(phi1_orbit, obs_orbit, phi1_data):
@@ -259,13 +276,13 @@ def ln_likelihood_stream(pot):
     """
     try:
         orbit, ts = integrate_orbit(pot)
-        phi1_orb, phi2_orb, pm1_orb, pm2_orb = orbit_to_gd1(orbit, ts)
+        phi1_orb, phi2_orb, pm1_orb, pm2_orb, rv_orb = orbit_to_gd1(orbit, ts)
     except Exception:
         return -1e10
 
     # Select only the orbit segment near the stream (|phi2| < 15 deg)
-    phi1_seg, phi2_seg, pm1_seg, pm2_seg = _select_stream_segment(
-        phi1_orb, phi2_orb, pm1_orb, pm2_orb
+    phi1_seg, phi2_seg, pm1_seg, pm2_seg, rv_seg = _select_stream_segment(
+        phi1_orb, phi2_orb, pm1_orb, pm2_orb, rv_orb
     )
 
     phi1_data = _TRACK["phi1_deg"].values
@@ -301,5 +318,15 @@ def ln_likelihood_stream(pot):
     resid_pm2 = _TRACK["pm2_med"].values[valid] - pm2_mod[valid]
     sigma_pm2 = np.sqrt(_TRACK["pm2_err"].values[valid] ** 2 + SYS_PM ** 2)
     chi2 += np.sum((resid_pm2 / sigma_pm2) ** 2)
+
+    # RV channel from DESI cross-match (separate phi1 grid, fewer bins)
+    if _RV_TRACK is not None and len(_RV_TRACK) > 0:
+        SYS_RV = 5.0  # km/s — systematic floor for radial velocities
+        phi1_rv_data = _RV_TRACK["phi1_deg"].values
+        rv_mod, valid_rv = _interpolate_track(phi1_seg, rv_seg, phi1_rv_data)
+        if np.sum(valid_rv) > 2:
+            resid_rv = _RV_TRACK["rv_med"].values[valid_rv] - rv_mod[valid_rv]
+            sigma_rv = np.sqrt(_RV_TRACK["rv_err"].values[valid_rv] ** 2 + SYS_RV ** 2)
+            chi2 += np.sum((resid_rv / sigma_rv) ** 2)
 
     return -0.5 * chi2
