@@ -1,25 +1,50 @@
 # MW Halo Figure Rotation
 
-**First observational constraint on the figure rotation rate of the Milky Way's dark matter halo from GD-1 and rotation curve data.**
+**First observational constraint on the figure rotation rate of the Milky Way's dark matter halo using stellar streams and rotation curve data.**
 
-LCDM simulations predict that triaxial dark matter halos tumble about their minor axis at ~0.1 km/s/kpc. This has never been constrained observationally. We use the GD-1 stellar stream as a dynamical probe: the stream track on the sky encodes the past orientation of the halo potential, which differs from the present if the halo is rotating.
+LCDM simulations predict that triaxial dark matter halos tumble about their minor axis at ~0.1 km/s/kpc (Bailin & Steinmetz 2004; Arora & Valluri 2023). This has never been constrained observationally. We use two stellar streams (GD-1 and Pal 5) as dynamical probes: the stream tracks on the sky encode the past orientation of the halo potential, which differs from the present if the halo is rotating.
+
+## Method
+
+- **Potential model:** Triaxial NFW halo (b=0.9, tilted 18 deg per Nibauer & Bonaca 2025) + SolidBodyRotation wrapper + fixed MWPotential2014 baryons + LMC perturbation (Erkal+2019)
+- **Data:** Eilers+2019 rotation curve (32 points) + GD-1 stream track (44 bins, Gaia DR3 + DESI DR1 RVs) + Pal 5 stream track (7 bins, Kuzma+2022)
+- **Inference:** Joint Bayesian MCMC (emcee) with 4 free halo parameters
 
 ## Structure
 
 ```
 src/
-  potential/    Triaxial NFW + SolidBodyRotation wrapper (galpy)
-  likelihood/   RC and stream chi-squared likelihoods
-  sampling/     emcee sampler, priors, convergence diagnostics
-  stream/       GD-1 orbit integration and track comparison
-  utils/        Coordinate transforms, data loaders
-scripts/        Numbered pipeline steps (01_, 02_, ...)
-notebooks/      Exploration and plotting
+  potential/    Triaxial NFW + rotation wrapper + LMC (galpy)
+  likelihood/   RC, GD-1 stream, and Pal 5 stream likelihoods
+  sampling/     emcee sampler, priors
+scripts/        Numbered pipeline steps (00-06)
 data/           Input data (processed CSVs tracked; large raw files gitignored)
 results/        Output chains, plots, tables
 paper/          Project plan and manuscript
-tests/          Unit tests
 ```
+
+## Pipeline
+
+| Script | Description |
+|--------|-------------|
+| `00_clean_gd1_catalog.py` | Four-criterion cleaning of GD-1 catalog (2276 -> 2079 members) |
+| `01_bin_gd1_track.py` | Bin GD-1 into 44-point track with 10k bootstrap errors |
+| `02_validate_potential.py` | Validate composite potential against rotation curve |
+| `03_run_rc_proper.py` | RC-only MCMC (validation run) |
+| `04_run_joint.py` | Joint MCMC: RC + GD-1 + Pal 5 + LMC (main science run) |
+| `05_bin_pal5_track.py` | Bin Pal 5 into 7-point track from Kuzma+2022 |
+| `06_crossmatch_desi.py` | Cross-match streams with DESI DR1 for precision RVs |
+
+## Parameters
+
+| Parameter | Symbol | Prior | Unit |
+|-----------|--------|-------|------|
+| Halo velocity scale | v_h | U(100, 300) | km/s |
+| Halo scale radius | r_h | U(5, 40) | kpc |
+| Vertical flattening | q_z | U(0.5, 2.0) | -- |
+| **Figure rotation rate** | **Omega_p** | **U(0, 0.5)** | **km/s/kpc** |
+
+Fixed: in-plane axis ratio b=0.9, halo tilt=18 deg, LMC mass=1.38e11 Msun.
 
 ## Setup
 
@@ -29,15 +54,18 @@ conda activate mw-halo
 pip install -e .
 ```
 
-## Parameters
+## Data Sources
 
-| Parameter | Symbol | Prior | Unit |
-|-----------|--------|-------|------|
-| Halo velocity scale | v_h | U(150, 300) | km/s |
-| Halo scale radius | r_h | U(5, 40) | kpc |
-| Vertical flattening | q_z | U(0.5, 1.5) | — |
-| **Figure rotation rate** | **Omega_p** | **U(0, 0.5)** | **km/s/kpc** |
+- Rotation curve: Eilers et al. 2019, ApJ, 871, 120
+- GD-1 catalog: Tavangar & Price-Whelan 2025 (Zenodo 15428120)
+- GD-1 RVs: DESI DR1 (NOIRLab DataLab cross-match)
+- Pal 5 catalog: Kuzma et al. 2022, MNRAS, 512, 315
+- LMC parameters: Erkal et al. 2019, MNRAS, 487, 2685
+- Halo tilt: Nibauer & Bonaca 2025
 
-## Key Reference
+## Key References
 
-Bailin & Steinmetz (2004) predict Omega_p ~ 0.15h km/s/kpc from N-body simulations.
+- Bailin & Steinmetz (2004) -- simulation prediction: Omega_p ~ 0.15h km/s/kpc
+- Arora & Valluri (2023) -- TNG50 figure rotation statistics
+- Nibauer & Bonaca (2025) -- tilted halo from GD-1
+- Erkal et al. (2021) -- detecting figure rotation with tidal streams
