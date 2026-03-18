@@ -39,7 +39,7 @@ def ln_posterior(theta):
     v_h, r_h, q_z, Omega_p = theta
 
     try:
-        pot = build_potential(v_h, r_h, q_z, Omega_p)
+        pot = build_potential(v_h, r_h, q_z, Omega_p, include_lmc=True)
         lnL = ln_likelihood_joint(pot)
     except Exception:
         return -np.inf

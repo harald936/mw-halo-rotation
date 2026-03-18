@@ -41,6 +41,12 @@ VO = 229.0   # km/s
 # Fixed in-plane axis ratio
 Q_Y = 0.9    # y/x ratio — makes the halo triaxial
 
+# Halo tilt angle from Nibauer & Bonaca 2025
+# The halo minor axis is tilted 18 deg from the disk z-axis toward x
+TILT_DEG = 18.0
+_tilt_rad = np.radians(TILT_DEG)
+ZVEC = [np.sin(_tilt_rad), 0.0, np.cos(_tilt_rad)]  # [0.309, 0, 0.951]
+
 
 def _nfw_amp_from_vh(v_h, r_h):
     """
@@ -87,6 +93,7 @@ def build_halo_potential(v_h, r_h, q_z, Omega_p=0.0, pa=0.0):
         a=a_nat,
         b=Q_Y,       # in-plane axis ratio — TRIAXIAL
         c=q_z,       # vertical axis ratio
+        zvec=ZVEC,   # halo minor axis tilted 18 deg (Nibauer & Bonaca 2025)
     )
 
     if Omega_p == 0.0:

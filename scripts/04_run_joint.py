@@ -34,7 +34,7 @@ sampler = run_sampler(
     n_walkers=64, n_steps=5000,
     p0=[188.0, 21.5, 0.93, 0.05],
     spread=[15.0, 5.0, 0.15, 0.04],
-    backend_file=CHAIN, rc_only=False, n_cores=11,
+    backend_file=CHAIN, rc_only=False, n_cores=8,
 )
 
 chain = sampler.get_chain()
