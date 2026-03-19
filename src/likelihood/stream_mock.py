@@ -110,8 +110,13 @@ def _particle_to_stream_coords(orbit, frame_cls):
     stream = sc.transform_to(frame_cls())
     phi1 = stream.phi1.deg
     phi2 = stream.phi2.deg
+    pm_phi1_cosphi2 = stream.pm_phi1_cosphi2.value
+    pm_phi2 = stream.pm_phi2.value
     rv = stream.radial_velocity.to(u.km / u.s).value
-    return float(phi1), float(phi2), float(rv)
+    # Convert pm_phi1_cosphi2 to pm_phi1
+    cos_phi2 = np.cos(np.radians(float(phi2)))
+    pm1 = pm_phi1_cosphi2 / cos_phi2
+    return float(phi1), float(phi2), float(pm1), float(pm_phi2), float(rv)
 
 
 def _mock_stream_likelihood_single(pot, name):
@@ -147,14 +152,13 @@ def _mock_stream_likelihood_single(pot, name):
         if len(orbits) < 20:
             return -1e10
 
-        # Extract stream coords for each particle
-        phi1s, phi2s, rvs = [], [], []
+        # Extract stream coords for each particle (including PM)
+        phi1s, phi2s, pm1s, pm2s, rvs = [], [], [], [], []
         for orb in orbits:
             try:
-                p1, p2, rv = _particle_to_stream_coords(orb, cfg['frame'])
-                phi1s.append(p1)
-                phi2s.append(p2)
-                rvs.append(rv)
+                p1, p2, m1, m2, rv = _particle_to_stream_coords(orb, cfg['frame'])
+                phi1s.append(p1); phi2s.append(p2)
+                pm1s.append(m1); pm2s.append(m2); rvs.append(rv)
             except Exception:
                 continue
 
@@ -163,11 +167,13 @@ def _mock_stream_likelihood_single(pot, name):
 
         phi1s = np.array(phi1s)
         phi2s = np.array(phi2s)
+        pm1s = np.array(pm1s)
+        pm2s = np.array(pm2s)
         rvs = np.array(rvs)
 
         # Select near-stream particles
         near = np.abs(phi2s) < 15
-        phi1s, phi2s, rvs = phi1s[near], phi2s[near], rvs[near]
+        phi1s, phi2s, pm1s, pm2s, rvs = phi1s[near], phi2s[near], pm1s[near], pm2s[near], rvs[near]
 
         if len(phi1s) < 10:
             return -1e10
@@ -193,15 +199,32 @@ def _mock_stream_likelihood_single(pot, name):
 
     chi2 = 0.0
 
-    # phi2
+    # phi2 with fitted sigma_sys
     phi1_data = track['phi1_deg'].values
     phi2_mod, v = interp(phi1s, phi2s, phi1_data)
     if v.sum() >= 3:
-        sigma = np.sqrt(track['phi2_err'].values[v] ** 2 + cfg['sys_phi2'] ** 2)
-        chi2 += np.sum((track['phi2_med'].values[v] - phi2_mod[v]) ** 2 / sigma ** 2)
+        sigma2 = track['phi2_err'].values[v] ** 2 + sigma_sys ** 2
+        chi2 += np.sum((track['phi2_med'].values[v] - phi2_mod[v]) ** 2 / sigma2)
+        chi2 += np.sum(np.log(sigma2))  # penalty for large sigma_sys
+
+    # PM channels (where available in track data)
+    SYS_PM = 0.5  # mas/yr systematic floor for proper motions
+    if 'pm1_med' in track.columns:
+        pm1_mod, vpm1 = interp(phi1s, pm1s, phi1_data)
+        valid_pm1 = v & vpm1
+        if valid_pm1.sum() >= 2:
+            sigma_pm1 = np.sqrt(track['pm1_err'].values[valid_pm1] ** 2 + SYS_PM ** 2)
+            chi2 += np.sum((track['pm1_med'].values[valid_pm1] - pm1_mod[valid_pm1]) ** 2 / sigma_pm1 ** 2)
+
+    if 'pm2_med' in track.columns:
+        pm2_mod, vpm2 = interp(phi1s, pm2s, phi1_data)
+        valid_pm2 = v & vpm2
+        if valid_pm2.sum() >= 2:
+            sigma_pm2 = np.sqrt(track['pm2_err'].values[valid_pm2] ** 2 + SYS_PM ** 2)
+            chi2 += np.sum((track['pm2_med'].values[valid_pm2] - pm2_mod[valid_pm2]) ** 2 / sigma_pm2 ** 2)
 
     # RV from track (Pal5, Jhelum have RV in main track)
-    if 'rv_med' in track.columns and 'rv' in cfg['channels']:
+    if 'rv_med' in track.columns:
         rv_mod, vrv = interp(phi1s, rvs, phi1_data)
         valid_rv = v & vrv
         if valid_rv.sum() >= 2:

@@ -41,8 +41,6 @@ os.makedirs(PLOTS, exist_ok=True)
 N_PARTICLES = 200
 N_STEPS = 300
 
-# Cache LMC potential (computed once)
-_LMC_POT_CACHE = {}
 
 # -----------------------------------------------------------------------
 # Parameter setup: 5D
@@ -172,12 +170,10 @@ def log_likelihood(theta):
             lnL += _mock_stream_single(pot, name, sigma_sys)
 
         # Orphan-Chenab with LMC rebuilt for current parameters
-        try:
-            lmc_pot, _ = build_lmc_potential(pot)
-            pot_lmc = pot + [lmc_pot]
-            lnL += _mock_stream_single(pot_lmc, 'orphan', sigma_sys)
-        except Exception:
-            lnL += _mock_stream_single(pot, 'orphan', sigma_sys)
+        # No silent fallback — if LMC fails, return -1e10 so sampler knows
+        lmc_pot, _ = build_lmc_potential(pot)
+        pot_lmc = pot + [lmc_pot]
+        lnL += _mock_stream_single(pot_lmc, 'orphan', sigma_sys)
 
         return lnL if np.isfinite(lnL) else -1e10
     except Exception:

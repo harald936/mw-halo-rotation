@@ -49,7 +49,7 @@ def build_potential(v_h, r_h, q_z, Omega_p=0.0, pa=0.0, include_lmc=False):
 
     if include_lmc:
         # Key cache by rounded halo params so different parameters get different LMC orbits
-        cache_key = (round(v_h, 1), round(r_h, 1), round(q_z, 2))
+        cache_key = (round(v_h, 1), round(r_h, 1), round(q_z, 2), round(Omega_p, 3), round(pa, 3))
         if cache_key not in _LMC_CACHE:
             from .lmc import build_lmc_potential
             lmc_pot, lmc_orbit = build_lmc_potential(pot)

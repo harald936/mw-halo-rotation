@@ -10,13 +10,11 @@ Method:
   3. Integrate orbit backward ~1.2 Gyr in the (rotating) potential
   4. Project orbit back to GD-1 frame
   5. Interpolate model track at observed phi1 values
-  6. Chi-squared on (phi2, pm_phi1, pm_phi2) residuals
+  6. Chi-squared on (phi2, pm_phi1, pm_phi2, RV) residuals
 
 The anchor's distance and RV come from the literature:
   distance ~ 10 kpc (Koposov+2010)
-  RV ~ -133 km/s at the anchor point is the stream's systemic RV;
-  however, the actual RV varies along the stream. We use the
-  measured RV at the anchor position from our binned track.
+  RV ~ -183.3 km/s at the anchor position (from our binned RV track).
 
 pm_phi1 in the data is pm_phi1 (NOT pm_phi1_cosphi2).
 gala's GD1 frame uses pm_phi1_cosphi2, so we convert.
@@ -37,19 +35,6 @@ from galpy.util.conversion import time_in_Gyr
 RO = 8.122   # kpc
 VO = 229.0   # km/s
 Z_SUN = 0.0208  # kpc
-
-# Solar motion: Schoenrich+2010 peculiar + V0=229
-# U, V, W = 11.1, 12.24, 7.25 km/s (peculiar)
-# V_total = V0 + V_peculiar = 229 + 12.24 = 241.24 km/s
-SOLAR_MOTION = coord.CartesianDifferential(
-    [11.1, 241.24, 7.25] * u.km / u.s
-)
-
-GALCEN_FRAME = coord.Galactocentric(
-    galcen_distance=RO * u.kpc,
-    z_sun=Z_SUN * u.kpc,
-    galcen_v_sun=SOLAR_MOTION,
-)
 
 # -----------------------------------------------------------------------
 # Anchor point
@@ -102,29 +87,6 @@ _RV_TRACK = _load_rv_track()
 # -----------------------------------------------------------------------
 # Core functions
 # -----------------------------------------------------------------------
-def _anchor_to_galcen():
-    """
-    Transform the GD-1 anchor point to Galactocentric coordinates.
-
-    Returns an astropy SkyCoord in the Galactocentric frame.
-    """
-    # Convert pm_phi1 to pm_phi1_cosphi2 (gala convention)
-    cos_phi2 = np.cos(np.radians(ANCHOR_PHI2))
-    pm_phi1_cosphi2 = ANCHOR_PM1 * cos_phi2
-
-    gd1 = gc.GD1Koposov10(
-        phi1=ANCHOR_PHI1 * u.deg,
-        phi2=ANCHOR_PHI2 * u.deg,
-        distance=ANCHOR_DIST * u.kpc,
-        pm_phi1_cosphi2=pm_phi1_cosphi2 * u.mas / u.yr,
-        pm_phi2=ANCHOR_PM2 * u.mas / u.yr,
-        radial_velocity=ANCHOR_RV * u.km / u.s,
-    )
-
-    galcen = gd1.transform_to(GALCEN_FRAME)
-    return galcen
-
-
 def integrate_orbit(pot, t_gyr=T_INTEG_GYR, n_steps=2000):
     """
     Integrate the GD-1 anchor orbit backward in the given potential.
