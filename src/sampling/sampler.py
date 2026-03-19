@@ -42,7 +42,7 @@ def ln_posterior(theta):
     try:
         pot = build_potential(v_h, r_h, q_z, Omega_p, include_lmc=False)
         lnL = ln_likelihood_joint(pot)
-    except Exception:
+    except (RuntimeError, ValueError):
         return -np.inf
 
     if not np.isfinite(lnL):
@@ -61,7 +61,7 @@ def ln_posterior_rc_only(theta):
     try:
         pot = build_potential(v_h, r_h, q_z, Omega_p)
         lnL = ln_likelihood_rc(pot)
-    except Exception:
+    except (RuntimeError, ValueError):
         return -np.inf
 
     if not np.isfinite(lnL):

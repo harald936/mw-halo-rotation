@@ -124,7 +124,7 @@ def mock_stream_to_track(orbits, transform_func, phi1_bins):
             pm1_all.append(m1)
             pm2_all.append(m2)
             rv_all.append(rv)
-        except Exception:
+        except (ValueError, AttributeError):
             continue
 
     if len(phi1_all) < 10:
