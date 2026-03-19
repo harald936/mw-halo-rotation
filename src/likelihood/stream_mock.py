@@ -1,7 +1,7 @@
 """
 Mock-stream-based joint stream likelihood.
 
-Releases 200 test particles per stream from the progenitor via the
+Releases 100 test particles per stream from the progenitor via the
 spray method and integrates each independently. The interpolated
 track of the particle cloud is compared to the data.
 
@@ -35,7 +35,7 @@ RO = 8.122
 VO = 229.0
 Z_SUN = 0.0208
 
-N_PARTICLES = 200
+N_PARTICLES = 100
 N_STEPS = 300
 
 SYS_PM = 0.5   # mas/yr — systematic floor for proper motions
