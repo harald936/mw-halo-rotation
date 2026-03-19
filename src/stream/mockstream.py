@@ -103,8 +103,8 @@ def mock_stream_to_track(orbits, transform_func, phi1_bins):
     orbits : list of galpy Orbit objects
         Each at t=0 (present day).
     transform_func : callable
-        Function that takes (orbit, t=0) and returns
-        (phi1, phi2, pm1, pm2, rv) for that particle.
+        Function that takes an orbit and returns
+        (phi1, phi2, pm1, pm2, rv) at t=0 for that particle.
     phi1_bins : ndarray
         Bin edges in phi1 for the track.
 
