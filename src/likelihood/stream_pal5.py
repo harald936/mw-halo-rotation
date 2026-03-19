@@ -134,7 +134,7 @@ def ln_likelihood_pal5(pot):
     try:
         orbit, ts = integrate_orbit_pal5(pot)
         phi1_orb, phi2_orb, pm1_orb, pm2_orb, rv_orb = orbit_to_pal5(orbit, ts)
-    except Exception:
+    except (RuntimeError, ValueError):
         return -1e10
 
     phi1s, phi2s, pm1s, pm2s, rvs = _select_stream_segment(

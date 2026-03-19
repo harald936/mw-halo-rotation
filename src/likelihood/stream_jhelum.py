@@ -83,7 +83,7 @@ def ln_likelihood_jhelum(pot):
 
         near = np.abs(phi2) < 10
         phi1, phi2, rv = phi1[near], phi2[near], rv[near]
-    except Exception:
+    except (RuntimeError, ValueError):
         return -1e10
 
     phi1_data = _TRACK["phi1_deg"].values

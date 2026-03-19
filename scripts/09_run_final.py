@@ -27,7 +27,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import corner
 
-RO, VO, Z_SUN = 8.122, 229.0, 0.0208
 PLOTS = os.path.join(REPO, "results", "plots")
 os.makedirs(PLOTS, exist_ok=True)
 

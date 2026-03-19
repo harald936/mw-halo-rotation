@@ -239,7 +239,7 @@ def ln_likelihood_stream(pot):
     try:
         orbit, ts = integrate_orbit(pot)
         phi1_orb, phi2_orb, pm1_orb, pm2_orb, rv_orb = orbit_to_gd1(orbit, ts)
-    except Exception:
+    except (RuntimeError, ValueError):
         return -1e10
 
     # Select only the orbit segment near the stream (|phi2| < 15 deg)

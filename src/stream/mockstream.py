@@ -88,7 +88,7 @@ def generate_mock_stream(pot, progenitor_orbit, t_strip_gyr,
             particle.integrate(ts, pot)
             orbits.append(particle)
             surviving_strip_times.append(t_strip)
-        except Exception:
+        except (RuntimeError, ValueError):
             continue  # skip failed integrations
 
     return orbits, np.array(surviving_strip_times)

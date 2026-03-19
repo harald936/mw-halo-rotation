@@ -86,7 +86,7 @@ def ln_likelihood_orphan(pot):
 
         near = np.abs(phi2) < 15
         phi1, phi2, rv = phi1[near], phi2[near], rv[near]
-    except Exception:
+    except (RuntimeError, ValueError):
         return -1e10
 
     # Larger systematic floors — LMC perturbation not modeled
