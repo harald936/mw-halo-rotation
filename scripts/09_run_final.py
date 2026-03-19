@@ -26,8 +26,6 @@ from galpy.orbit import Orbit
 from galpy.util.conversion import time_in_Gyr
 import astropy.coordinates as coord
 import astropy.units as u
-import gala.coordinates as gc
-
 import dynesty
 import matplotlib
 matplotlib.use("Agg")
@@ -86,20 +84,25 @@ def _mock_stream_single(pot, name, sigma_sys):
         if len(orbits) < 20:
             return -1e10
 
-        phi1s, phi2s, rvs = [], [], []
+        phi1s, phi2s, pm1s, pm2s, rvs = [], [], [], [], []
         for o in orbits:
             try:
-                p1, p2, rv = _particle_to_stream_coords(o, cfg['frame'])
-                phi1s.append(p1); phi2s.append(p2); rvs.append(rv)
-            except:
-                pass
+                p1, p2, m1, m2, rv = _particle_to_stream_coords(o, cfg['frame'])
+                phi1s.append(p1); phi2s.append(p2)
+                pm1s.append(m1); pm2s.append(m2); rvs.append(rv)
+            except Exception:
+                continue
 
         if len(phi1s) < 20:
             return -1e10
 
-        phi1s, phi2s, rvs = np.array(phi1s), np.array(phi2s), np.array(rvs)
+        phi1s = np.array(phi1s)
+        phi2s = np.array(phi2s)
+        pm1s = np.array(pm1s)
+        pm2s = np.array(pm2s)
+        rvs = np.array(rvs)
         near = np.abs(phi2s) < 15
-        phi1s, phi2s, rvs = phi1s[near], phi2s[near], rvs[near]
+        phi1s, phi2s, pm1s, pm2s, rvs = phi1s[near], phi2s[near], pm1s[near], pm2s[near], rvs[near]
         if len(phi1s) < 10:
             return -1e10
     except Exception:
@@ -132,12 +135,30 @@ def _mock_stream_single(pot, name, sigma_sys):
         chi2 += np.sum(np.log(sigma2))  # penalty for large sigma_sys
         n_terms += v.sum()
 
+    # PM channels (where track has pm1_med, pm2_med)
+    SYS_PM = 0.5  # mas/yr
+    if 'pm1_med' in track.columns:
+        pm1_mod, vpm1 = interp(phi1s, pm1s, phi1_data)
+        valid_pm1 = v & vpm1
+        if valid_pm1.sum() >= 2:
+            sigma_pm1 = np.sqrt(track['pm1_err'].values[valid_pm1]**2 + SYS_PM**2)
+            chi2 += np.sum((track['pm1_med'].values[valid_pm1] - pm1_mod[valid_pm1])**2 / sigma_pm1**2)
+            n_terms += valid_pm1.sum()
+
+    if 'pm2_med' in track.columns:
+        pm2_mod, vpm2 = interp(phi1s, pm2s, phi1_data)
+        valid_pm2 = v & vpm2
+        if valid_pm2.sum() >= 2:
+            sigma_pm2 = np.sqrt(track['pm2_err'].values[valid_pm2]**2 + SYS_PM**2)
+            chi2 += np.sum((track['pm2_med'].values[valid_pm2] - pm2_mod[valid_pm2])**2 / sigma_pm2**2)
+            n_terms += valid_pm2.sum()
+
     # RV (from main track if available)
     if 'rv_med' in track.columns:
         rv_mod, vrv = interp(phi1s, rvs, phi1_data)
         valid_rv = v & vrv
         if valid_rv.sum() >= 2:
-            sigma_rv = 5.0  # km/s floor for RV (different unit than phi2)
+            sigma_rv = 5.0  # km/s floor for RV
             sigma2_rv = track['rv_err'].values[valid_rv]**2 + sigma_rv**2
             chi2 += np.sum((track['rv_med'].values[valid_rv] - rv_mod[valid_rv])**2 / sigma2_rv)
             n_terms += valid_rv.sum()
