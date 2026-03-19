@@ -1,14 +1,15 @@
 """
-Orphan-Chenab stream likelihood.
+Orphan-Chenab single-orbit stream likelihood (deprecated — see stream_mock.py).
 
-Uses Koposov+2023 pre-binned track data (spline models):
-  19 sky track bins (phi2) + 20 RV bins + 20 PM bins
+Uses Koposov+2023 pre-binned track data:
+  19 sky track bins (phi2) + 20 RV bins
+  (PM channels handled by the mock-stream likelihood in stream_mock.py)
 
 Anchor: phi1=0, d=21 kpc, RV=90 km/s (from Koposov+2023 track)
 PM from Koposov+2023 spline at phi1=0.
 
 LMC perturbation is significant for this stream (d~15-55 kpc).
-Handled via larger systematic error floor (1.0 deg, 1.0 mas/yr, 10 km/s).
+Handled via larger systematic error floor (1.0 deg, 10 km/s).
 """
 
 import numpy as np
