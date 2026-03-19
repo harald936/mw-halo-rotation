@@ -21,7 +21,6 @@ from src.potential.lmc import build_lmc_potential
 from src.likelihood.rotation_curve import ln_likelihood_rc
 from src.likelihood.stream_mock import mock_stream_likelihood_single
 
-from galpy.util.conversion import time_in_Gyr
 import dynesty
 import matplotlib
 matplotlib.use("Agg")

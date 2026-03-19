@@ -291,17 +291,26 @@ def mock_stream_likelihood_single(pot, name, sigma_sys):
     return -0.5 * chi2
 
 
-def ln_likelihood_mock_streams(pot, sigma_sys):
+def ln_likelihood_mock_streams(pot_no_lmc, sigma_sys, pot_with_lmc=None):
     """Joint mock-stream likelihood for all 4 streams.
+
+    GD-1, Pal 5, and Jhelum are evaluated with pot_no_lmc.
+    Orphan-Chenab is evaluated with pot_with_lmc (which should
+    include the LMC rebuilt for the current halo parameters).
+    If pot_with_lmc is None, pot_no_lmc is used for all streams.
 
     Parameters
     ----------
-    pot : list of galpy Potential objects
+    pot_no_lmc : list of galpy Potential objects
+        MW potential without LMC.
     sigma_sys : float
         Fitted model systematic uncertainty in degrees.
+    pot_with_lmc : list of galpy Potential objects, optional
+        MW potential with LMC for Orphan-Chenab. If None, uses pot_no_lmc.
     """
     total = 0.0
     for name in STREAMS:
+        pot = pot_with_lmc if (name == 'orphan' and pot_with_lmc is not None) else pot_no_lmc
         lnL = mock_stream_likelihood_single(pot, name, sigma_sys)
         if lnL <= -1e9:
             return -1e10

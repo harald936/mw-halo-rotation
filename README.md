@@ -8,7 +8,7 @@ LCDM simulations predict that triaxial dark matter halos tumble about their mino
 
 - **Potential model:** Triaxial NFW halo (b=0.9, tilted 18 deg per Nibauer & Bonaca 2025) + SolidBodyRotation wrapper + fixed MWPotential2014 baryons + LMC perturbation on Orphan-Chenab (Erkal+2019)
 - **Data:** Eilers+2019 rotation curve (32 points) + GD-1 (44 bins + 9 DESI RV bins) + Pal 5 (7 bins, Kuzma+2022) + Jhelum (6 bins, S5 DR1) + Orphan-Chenab (19+20 bins, Koposov+2023)
-- **Forward model:** Mock stream generation (200 test particles per stream, spray method) or single-orbit integration
+- **Forward model:** Mock stream generation (200 test particles per stream, spray method)
 - **Inference:** Dynesty nested sampling with 5 free parameters (v_h, r_h, q_z, Omega_p, sigma_sys) — sigma_sys is the model uncertainty fitted by the data
 
 ## Structure
@@ -16,9 +16,11 @@ LCDM simulations predict that triaxial dark matter halos tumble about their mino
 ```
 src/
   potential/    Triaxial NFW + rotation wrapper + LMC (galpy)
-  likelihood/   RC, GD-1 stream, and Pal 5 stream likelihoods
-  sampling/     emcee sampler, priors
-scripts/        Numbered pipeline steps (00-06)
+  likelihood/   RC + 4 stream likelihoods (GD-1, Pal 5, Jhelum, Orphan-Chenab)
+                + mock-stream joint likelihood
+  stream/       Mock stream generator (spray method, 200 particles)
+  sampling/     Priors + deprecated emcee sampler
+scripts/        Numbered pipeline steps (00-09)
 data/           Input data (processed CSVs tracked; large raw files gitignored)
 results/        Output chains, plots, tables
 paper/          Project plan and manuscript
@@ -32,9 +34,12 @@ paper/          Project plan and manuscript
 | `01_bin_gd1_track.py` | Bin GD-1 into 44-point track with 10k bootstrap errors |
 | `02_validate_potential.py` | Validate composite potential against rotation curve |
 | `03_run_rc_proper.py` | RC-only MCMC (validation run) |
-| `04_run_joint.py` | Joint MCMC: RC + GD-1 + Pal 5 + LMC (main science run) |
+| `04_run_joint.py` | Joint MCMC: RC + 4 streams (emcee, deprecated) |
 | `05_bin_pal5_track.py` | Bin Pal 5 into 7-point track from Kuzma+2022 |
 | `06_crossmatch_desi.py` | Cross-match streams with DESI DR1 for precision RVs |
+| `07_add_jhelum_orphan.py` | Process Jhelum + Orphan-Chenab from S5 DR1 / Koposov+2023 |
+| `08_run_dynesty.py` | Dynesty nested sampling (4 params, no LMC/mock streams) |
+| `09_run_final.py` | **Definitive run:** dynesty, 5 params, mock streams + LMC |
 
 ## Parameters
 
@@ -44,6 +49,7 @@ paper/          Project plan and manuscript
 | Halo scale radius | r_h | U(5, 40) | kpc |
 | Vertical flattening | q_z | U(0.5, 2.0) | -- |
 | **Figure rotation rate** | **Omega_p** | **U(0, 0.5)** | **km/s/kpc** |
+| Model systematic | sigma_sys | U(0.01, 3.0) | deg |
 
 Fixed: in-plane axis ratio b=0.9, halo tilt=18 deg, LMC mass=1.38e11 Msun.
 
@@ -61,6 +67,8 @@ pip install -e .
 - GD-1 catalog: Tavangar & Price-Whelan 2025 (Zenodo 15428120)
 - GD-1 RVs: DESI DR1 (NOIRLab DataLab cross-match)
 - Pal 5 catalog: Kuzma et al. 2022, MNRAS, 512, 315
+- Jhelum: S5 DR1 (Li et al. 2022)
+- Orphan-Chenab: Koposov et al. 2023
 - LMC parameters: Erkal et al. 2019, MNRAS, 487, 2685
 - Halo tilt: Nibauer & Bonaca 2025
 
@@ -69,4 +77,5 @@ pip install -e .
 - Bailin & Steinmetz (2004) -- simulation prediction: Omega_p ~ 0.15h km/s/kpc
 - Arora & Valluri (2023) -- TNG50 figure rotation statistics
 - Nibauer & Bonaca (2025) -- tilted halo from GD-1
-- Erkal et al. (2021) -- detecting figure rotation with tidal streams
+- Erkal et al. (2019) -- LMC perturbation on stellar streams
+- Koposov et al. (2023) -- Orphan-Chenab stream catalog
