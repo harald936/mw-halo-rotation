@@ -8,7 +8,7 @@ LCDM simulations predict that triaxial dark matter halos tumble about their mino
 
 - **Potential model:** Triaxial NFW halo (b=0.9, tilted 18 deg per Nibauer & Bonaca 2025) + SolidBodyRotation wrapper + fixed MWPotential2014 baryons + LMC perturbation on Orphan-Chenab (Erkal+2019)
 - **Data:** Eilers+2019 rotation curve (32 points) + GD-1 (44 bins + 9 DESI RV bins) + Pal 5 (7 bins, Kuzma+2022) + Jhelum (6 bins, S5 DR1) + Orphan-Chenab (19+20 bins, Koposov+2023)
-- **Forward model:** Mock stream generation (200 test particles per stream, spray method)
+- **Forward model:** Mock stream generation (100 test particles per stream, spray method)
 - **Inference:** Dynesty nested sampling with 5 free parameters (v_h, r_h, q_z, Omega_p, sigma_sys) — sigma_sys is the model uncertainty fitted by the data
 
 ## Structure
@@ -18,7 +18,7 @@ src/
   potential/    Triaxial NFW + rotation wrapper + LMC (galpy)
   likelihood/   RC + 4 stream likelihoods (GD-1, Pal 5, Jhelum, Orphan-Chenab)
                 + mock-stream joint likelihood
-  stream/       Mock stream generator (spray method, 200 particles)
+  stream/       Mock stream generator (spray method, 100 particles)
   sampling/     Priors + deprecated emcee sampler
 scripts/        Numbered pipeline steps (00-09)
 data/           Input data (processed CSVs tracked; large raw files gitignored)

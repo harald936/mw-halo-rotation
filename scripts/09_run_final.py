@@ -2,7 +2,7 @@
 FINAL RUN: Dynesty + Mock Streams + LMC (Orphan only) + sigma_sys
 ==================================================================
 5 free parameters: v_h, r_h, q_z, Omega_p, sigma_sys
-4 streams with 200 mock particles each
+4 streams with 100 mock particles each
 LMC perturbation on Orphan-Chenab only
 sigma_sys fitted (not guessed) — model uncertainty determined by data
 12 cores, estimated ~3-4 hours

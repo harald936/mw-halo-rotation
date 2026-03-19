@@ -20,7 +20,7 @@ using 4 stellar streams + rotation curve data, with LMC perturbation and tilted 
 ## Architecture
 - `src/potential/` — triaxial NFW + rotation + LMC + baryons (galpy)
 - `src/likelihood/` — RC, GD-1, Pal 5, Jhelum, Orphan-Chenab likelihoods
-- `src/stream/` — mock stream generator (spray method, 200 particles)
+- `src/stream/` — mock stream generator (spray method, 100 particles)
 - `src/sampling/` — priors + deprecated emcee sampler
 - `scripts/09_run_final.py` — definitive dynesty run with mock streams + LMC
 
