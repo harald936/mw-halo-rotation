@@ -19,13 +19,9 @@ sys.path.insert(0, REPO)
 from src.potential.composite import build_potential
 from src.potential.lmc import build_lmc_potential
 from src.likelihood.rotation_curve import ln_likelihood_rc
-from src.stream.mockstream import generate_mock_stream
-from src.likelihood.stream_mock import _particle_to_stream_coords, STREAMS, _ALL_TRACKS
+from src.likelihood.stream_mock import mock_stream_likelihood_single
 
-from galpy.orbit import Orbit
 from galpy.util.conversion import time_in_Gyr
-import astropy.coordinates as coord
-import astropy.units as u
 import dynesty
 import matplotlib
 matplotlib.use("Agg")
@@ -35,9 +31,6 @@ import corner
 RO, VO, Z_SUN = 8.122, 229.0, 0.0208
 PLOTS = os.path.join(REPO, "results", "plots")
 os.makedirs(PLOTS, exist_ok=True)
-
-N_PARTICLES = 200
-N_STEPS = 300
 
 
 # -----------------------------------------------------------------------
@@ -59,145 +52,23 @@ def prior_transform(u):
     return theta
 
 
-def _mock_stream_single(pot, name, sigma_sys):
-    """Mock stream likelihood for one stream with fitted sigma_sys."""
-    cfg = STREAMS[name]
-    data = _ALL_TRACKS[name]
-    track = data['track']
-    rv_track = data['rv_track']
-
-    try:
-        sc = coord.SkyCoord(
-            ra=cfg['anchor_ra']*u.deg, dec=cfg['anchor_dec']*u.deg,
-            distance=cfg['anchor_dist']*u.kpc,
-            pm_ra_cosdec=cfg['anchor_pmra']*u.mas/u.yr,
-            pm_dec=cfg['anchor_pmdec']*u.mas/u.yr,
-            radial_velocity=cfg['anchor_rv']*u.km/u.s)
-        prog = Orbit(sc, ro=RO, vo=VO, zo=Z_SUN, solarmotion=[11.1,12.24,7.25])
-        t_nat = np.linspace(0, -cfg['t_strip']/time_in_Gyr(VO,RO), 1000)
-        prog.integrate(t_nat, pot)
-
-        orbits, _ = generate_mock_stream(pot, prog, cfg['t_strip'],
-                                          n_particles=N_PARTICLES,
-                                          v_kick_kms=cfg['v_kick'],
-                                          n_steps_per_particle=N_STEPS)
-        if len(orbits) < 20:
-            return -1e10
-
-        phi1s, phi2s, pm1s, pm2s, rvs = [], [], [], [], []
-        for o in orbits:
-            try:
-                p1, p2, m1, m2, rv = _particle_to_stream_coords(o, cfg['frame'])
-                phi1s.append(p1); phi2s.append(p2)
-                pm1s.append(m1); pm2s.append(m2); rvs.append(rv)
-            except Exception:
-                continue
-
-        if len(phi1s) < 20:
-            return -1e10
-
-        phi1s = np.array(phi1s)
-        phi2s = np.array(phi2s)
-        pm1s = np.array(pm1s)
-        pm2s = np.array(pm2s)
-        rvs = np.array(rvs)
-        near = np.abs(phi2s) < 15
-        phi1s, phi2s, pm1s, pm2s, rvs = phi1s[near], phi2s[near], pm1s[near], pm2s[near], rvs[near]
-        if len(phi1s) < 10:
-            return -1e10
-    except Exception:
-        return -1e10
-
-    def interp(x_o, y_o, x_d):
-        if len(x_o) < 5:
-            return np.full_like(x_d, np.nan, dtype=float), np.zeros(len(x_d), dtype=bool)
-        idx = np.argsort(x_o)
-        xs, ys = x_o[idx], y_o[idx]
-        um = np.diff(xs, prepend=-999) > 0.001
-        xs, ys = xs[um], ys[um]
-        if len(xs) < 3:
-            return np.full_like(x_d, np.nan, dtype=float), np.zeros(len(x_d), dtype=bool)
-        v = (x_d >= xs.min()) & (x_d <= xs.max())
-        r = np.full_like(x_d, np.nan, dtype=float)
-        if v.sum() > 0:
-            r[v] = np.interp(x_d[v], xs, ys)
-        return r, v
-
-    chi2 = 0.0
-    n_terms = 0
-
-    # phi2 with fitted sigma_sys
-    phi1_data = track['phi1_deg'].values
-    phi2_mod, v = interp(phi1s, phi2s, phi1_data)
-    if v.sum() >= 3:
-        sigma2 = track['phi2_err'].values[v]**2 + sigma_sys**2
-        chi2 += np.sum((track['phi2_med'].values[v] - phi2_mod[v])**2 / sigma2)
-        chi2 += np.sum(np.log(sigma2))  # penalty for large sigma_sys
-        n_terms += v.sum()
-
-    # PM channels (where track has pm1_med, pm2_med)
-    SYS_PM = 0.5  # mas/yr
-    if 'pm1_med' in track.columns:
-        pm1_mod, vpm1 = interp(phi1s, pm1s, phi1_data)
-        valid_pm1 = v & vpm1
-        if valid_pm1.sum() >= 2:
-            sigma_pm1 = np.sqrt(track['pm1_err'].values[valid_pm1]**2 + SYS_PM**2)
-            chi2 += np.sum((track['pm1_med'].values[valid_pm1] - pm1_mod[valid_pm1])**2 / sigma_pm1**2)
-            n_terms += valid_pm1.sum()
-
-    if 'pm2_med' in track.columns:
-        pm2_mod, vpm2 = interp(phi1s, pm2s, phi1_data)
-        valid_pm2 = v & vpm2
-        if valid_pm2.sum() >= 2:
-            sigma_pm2 = np.sqrt(track['pm2_err'].values[valid_pm2]**2 + SYS_PM**2)
-            chi2 += np.sum((track['pm2_med'].values[valid_pm2] - pm2_mod[valid_pm2])**2 / sigma_pm2**2)
-            n_terms += valid_pm2.sum()
-
-    # RV (from main track if available)
-    if 'rv_med' in track.columns:
-        rv_mod, vrv = interp(phi1s, rvs, phi1_data)
-        valid_rv = v & vrv
-        if valid_rv.sum() >= 2:
-            sigma_rv = 5.0  # km/s floor for RV
-            sigma2_rv = track['rv_err'].values[valid_rv]**2 + sigma_rv**2
-            chi2 += np.sum((track['rv_med'].values[valid_rv] - rv_mod[valid_rv])**2 / sigma2_rv)
-            n_terms += valid_rv.sum()
-
-    # RV from separate track
-    if rv_track is not None:
-        phi1_rv = rv_track['phi1_deg'].values
-        rv_mod2, vrv2 = interp(phi1s, rvs, phi1_rv)
-        if vrv2.sum() >= 2:
-            sigma2_rv2 = rv_track['rv_err'].values[vrv2]**2 + 5.0**2
-            chi2 += np.sum((rv_track['rv_med'].values[vrv2] - rv_mod2[vrv2])**2 / sigma2_rv2)
-            n_terms += vrv2.sum()
-
-    if n_terms == 0:
-        return -1e10
-
-    return -0.5 * chi2
-
-
 def log_likelihood(theta):
     v_h, r_h, q_z, Omega_p, sigma_sys = theta
     try:
         pot = build_potential(v_h, r_h, q_z, Omega_p, include_lmc=False)
 
-        # LMC depends on current halo parameters — rebuild each time
-        # but only for Orphan-Chenab (others are too close for LMC to matter)
         lnL = ln_likelihood_rc(pot)
 
         for name in ['gd1', 'pal5', 'jhelum']:
-            lnL += _mock_stream_single(pot, name, sigma_sys)
+            lnL += mock_stream_likelihood_single(pot, name, sigma_sys)
 
-        # Orphan-Chenab with LMC rebuilt for current parameters
-        # No silent fallback — if LMC fails, return -1e10 so sampler knows
+        # Orphan-Chenab with LMC rebuilt for current halo parameters
         lmc_pot, _ = build_lmc_potential(pot)
         pot_lmc = pot + [lmc_pot]
-        lnL += _mock_stream_single(pot_lmc, 'orphan', sigma_sys)
+        lnL += mock_stream_likelihood_single(pot_lmc, 'orphan', sigma_sys)
 
         return lnL if np.isfinite(lnL) else -1e10
-    except Exception:
+    except (RuntimeError, ValueError):
         return -1e10
 
 
@@ -219,8 +90,19 @@ if __name__ == '__main__':
         sampler.run_nested(print_progress=True)
 
     results = sampler.results
-    from dynesty import utils as dyfunc
 
+    # Save raw results to disk
+    results_file = os.path.join(REPO, "results", "dynesty_final.npz")
+    os.makedirs(os.path.dirname(results_file), exist_ok=True)
+    np.savez(results_file,
+             samples=results.samples,
+             logwt=results.logwt,
+             logz=results.logz,
+             logzerr=results.logzerr,
+             ncall=results.ncall)
+    print(f"Results saved to {results_file}")
+
+    from dynesty import utils as dyfunc
     samples, weights = results.samples, np.exp(results.logwt - results.logz[-1])
     resampled = dyfunc.resample_equal(samples, weights)
 
