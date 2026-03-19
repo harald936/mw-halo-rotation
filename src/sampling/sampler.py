@@ -1,11 +1,12 @@
 """
-MCMC sampler using emcee.
+MCMC sampler using emcee (DEPRECATED for final analysis).
 
-Samples the joint posterior:
-    ln P(theta | data) = ln L_RC + ln L_stream + ln prior
+This module was used for early validation runs. The final analysis
+uses dynesty nested sampling via scripts/09_run_final.py, which
+includes mock streams, LMC rebuilding per evaluation, and fitted
+sigma_sys. This emcee sampler does NOT include LMC or mock streams.
 
-Uses emcee's ensemble sampler with StretchMove (70%) + DEMove (30%)
-for better exploration of correlated/multimodal posteriors.
+For the definitive run, use scripts/09_run_final.py instead.
 """
 
 import numpy as np

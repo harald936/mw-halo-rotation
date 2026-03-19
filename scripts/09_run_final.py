@@ -36,6 +36,7 @@ import corner
 
 RO, VO, Z_SUN = 8.122, 229.0, 0.0208
 PLOTS = os.path.join(REPO, "results", "plots")
+os.makedirs(PLOTS, exist_ok=True)
 
 N_PARTICLES = 200
 N_STEPS = 300

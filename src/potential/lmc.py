@@ -74,19 +74,17 @@ def build_lmc_potential(mw_pot, t_back_gyr=3.0, n_steps=3000):
     lmc_orbit : Orbit
         The integrated LMC orbit (for diagnostics).
     """
-    # LMC present-day phase space from galpy/SIMBAD
-    # from_name returns an Orbit with physical units enabled.
-    # Extract cylindrical coords and rebuild without ro/vo
-    # to stay in pure natural units (consistent with rest of pipeline).
-    lmc_phys = Orbit.from_name('LMC', ro=RO, vo=VO, zo=0.0208,
-                               solarmotion='schoenrich')
-    R = lmc_phys.R(use_physical=False)
-    vR = lmc_phys.vR(use_physical=False)
-    vT = lmc_phys.vT(use_physical=False)
-    z = lmc_phys.z(use_physical=False)
-    vz = lmc_phys.vz(use_physical=False)
-    phi = lmc_phys.phi(use_physical=False)
-    lmc = Orbit([R, vR, vT, z, vz, phi])
+    # LMC present-day phase space in galpy natural units.
+    # Hardcoded from Orbit.from_name('LMC') with ro=8.122, vo=229,
+    # zo=0.0208, solarmotion='schoenrich'. Avoids external lookup
+    # for reproducibility on offline/cluster nodes.
+    # Source: Gaia DR3 + Kallivayalil+2013 + Pietrzynski+2013
+    lmc = Orbit([5.0553000404,    # R (natural)
+                 0.9992417185,    # vR (natural)
+                 0.2221253254,    # vT (natural)
+                 -3.4283697540,   # z (natural)
+                 0.9121802587,    # vz (natural)
+                 -1.5433169752])  # phi (radians)
 
     # Hernquist profile for the LMC mass distribution
     lmc_hernquist = HernquistPotential(amp=AMP_LMC_NAT, a=A_LMC_NAT)

@@ -12,7 +12,8 @@ from .halo import build_halo_potential
 RO = 8.122  # kpc
 VO = 229.0  # km/s
 
-# Cache for LMC potential (expensive to compute, doesn't change between MCMC steps)
+# Cache for LMC potential, keyed by (v_h, r_h, q_z) rounded to avoid float issues.
+# Different halo parameters produce different LMC orbits via dynamical friction.
 _LMC_CACHE = {}
 
 
@@ -47,12 +48,12 @@ def build_potential(v_h, r_h, q_z, Omega_p=0.0, pa=0.0, include_lmc=False):
     pot = baryons + [halo]
 
     if include_lmc:
-        if 'lmc' not in _LMC_CACHE:
+        # Key cache by rounded halo params so different parameters get different LMC orbits
+        cache_key = (round(v_h, 1), round(r_h, 1), round(q_z, 2))
+        if cache_key not in _LMC_CACHE:
             from .lmc import build_lmc_potential
-            # Build LMC using the current MW potential (without LMC)
             lmc_pot, lmc_orbit = build_lmc_potential(pot)
-            _LMC_CACHE['lmc'] = lmc_pot
-            _LMC_CACHE['orbit'] = lmc_orbit
-        pot = pot + [_LMC_CACHE['lmc']]
+            _LMC_CACHE[cache_key] = lmc_pot
+        pot = pot + [_LMC_CACHE[cache_key]]
 
     return pot
