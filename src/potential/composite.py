@@ -12,7 +12,7 @@ from .halo import build_halo_potential
 RO = 8.122  # kpc
 VO = 229.0  # km/s
 
-# Cache for LMC potential, keyed by (v_h, r_h, q_z) rounded to avoid float issues.
+# Cache for LMC potential, keyed by (v_h, r_h, q_z, Omega_p, pa) rounded to avoid float issues.
 # Different halo parameters produce different LMC orbits via dynamical friction.
 _LMC_CACHE = {}
 
