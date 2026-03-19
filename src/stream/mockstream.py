@@ -1,9 +1,10 @@
 """
 Mock stream generator using test particle stripping.
 
-Releases N particles from a progenitor's Lagrange points over
-the disruption time, each with a small velocity kick. Each
-particle then orbits independently in the (rotating) potential.
+Releases N particles from the progenitor's position over
+the disruption time, each with a small velocity kick in the
+tangential direction (spray method). Each particle then orbits
+independently in the (rotating) potential.
 
 This is NOT N-body (no self-gravity between particles).
 It IS physically realistic for streams with low-mass progenitors
@@ -58,6 +59,7 @@ def generate_mock_stream(pot, progenitor_orbit, t_strip_gyr,
     strip_times = np.linspace(-t_strip_nat, 0, n_particles)
 
     orbits = []
+    surviving_strip_times = []
     for i, t_strip in enumerate(strip_times):
         # Get progenitor position at stripping time
         R = progenitor_orbit.R(t_strip)
@@ -68,11 +70,14 @@ def generate_mock_stream(pot, progenitor_orbit, t_strip_gyr,
         phi = progenitor_orbit.phi(t_strip)
 
         # Add small velocity kick (alternating leading/trailing)
+        # Use deterministic seed based on particle index for reproducibility
+        # Same parameters → same stream → same likelihood (required by samplers)
+        rng = np.random.RandomState(seed=42 + i)
         sign = 1 if i % 2 == 0 else -1
         # Kick along the orbit (tangential) + small random perpendicular
-        dvT = sign * v_kick_nat * (0.8 + 0.4 * np.random.rand())
-        dvR = v_kick_nat * 0.3 * np.random.randn()
-        dvz = v_kick_nat * 0.3 * np.random.randn()
+        dvT = sign * v_kick_nat * (0.8 + 0.4 * rng.rand())
+        dvR = v_kick_nat * 0.3 * rng.randn()
+        dvz = v_kick_nat * 0.3 * rng.randn()
 
         # Create stripped particle
         particle = Orbit([R, vR + dvR, vT + dvT, z, vz + dvz, phi])
@@ -82,10 +87,11 @@ def generate_mock_stream(pot, progenitor_orbit, t_strip_gyr,
         try:
             particle.integrate(ts, pot)
             orbits.append(particle)
+            surviving_strip_times.append(t_strip)
         except Exception:
             continue  # skip failed integrations
 
-    return orbits, strip_times[:len(orbits)]
+    return orbits, np.array(surviving_strip_times)
 
 
 def mock_stream_to_track(orbits, transform_func, phi1_bins):

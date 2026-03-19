@@ -52,7 +52,7 @@ BOUNDS = [
     (5.0, 40.0),      # r_h
     (0.5, 2.0),       # q_z
     (0.0, 0.5),       # Omega_p
-    (0.01, 3.0),      # sigma_sys (degrees)
+    (0.01, 3.0),      # sigma_sys (degrees, applied to phi2 sky track only; RV uses fixed 5 km/s)
 ]
 
 def prior_transform(u):
@@ -163,19 +163,20 @@ def log_likelihood(theta):
     try:
         pot = build_potential(v_h, r_h, q_z, Omega_p, include_lmc=False)
 
-        # For Orphan-Chenab, add LMC
-        if 'lmc' not in _LMC_POT_CACHE:
-            lmc_pot, _ = build_lmc_potential(pot)
-            _LMC_POT_CACHE['lmc'] = lmc_pot
-        pot_with_lmc = pot + [_LMC_POT_CACHE['lmc']]
-
+        # LMC depends on current halo parameters — rebuild each time
+        # but only for Orphan-Chenab (others are too close for LMC to matter)
         lnL = ln_likelihood_rc(pot)
 
         for name in ['gd1', 'pal5', 'jhelum']:
             lnL += _mock_stream_single(pot, name, sigma_sys)
 
-        # Orphan-Chenab with LMC
-        lnL += _mock_stream_single(pot_with_lmc, 'orphan', sigma_sys)
+        # Orphan-Chenab with LMC rebuilt for current parameters
+        try:
+            lmc_pot, _ = build_lmc_potential(pot)
+            pot_lmc = pot + [lmc_pot]
+            lnL += _mock_stream_single(pot_lmc, 'orphan', sigma_sys)
+        except Exception:
+            lnL += _mock_stream_single(pot, 'orphan', sigma_sys)
 
         return lnL if np.isfinite(lnL) else -1e10
     except Exception:
