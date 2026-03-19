@@ -4,7 +4,7 @@ Parameter priors for MCMC sampling.
 Four free parameters with uniform priors:
     v_h     : U(100, 300) km/s — halo velocity scale
     r_h     : U(5, 40) kpc — halo scale radius
-    q_z     : U(0.5, 1.5) — vertical flattening
+    q_z     : U(0.5, 2.0) — vertical flattening
     Omega_p : U(0, 0.5) km/s/kpc — figure rotation rate
 
 The prior bounds are broad enough to cover all reasonable

@@ -26,8 +26,9 @@ Z_SUN = 0.0208
 # Jhelum anchor — median of cleaned members
 # RA/Dec from S5, d=12 kpc (Li+2022), RV=20 km/s
 # PM from Gaia: pmra~6 mas/yr, pmdec~-5 mas/yr (Li+2022 Table 2)
-ANCHOR_RA = 10.0
-ANCHOR_DEC = -46.0
+# Correct ICRS at phi1=10, phi2=0 in JhelumBonaca19
+ANCHOR_RA = 343.2
+ANCHOR_DEC = -50.8
 ANCHOR_DIST = 12.0
 ANCHOR_PMRA = 6.0
 ANCHOR_PMDEC = -5.0

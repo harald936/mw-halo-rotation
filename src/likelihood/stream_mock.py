@@ -60,7 +60,7 @@ STREAMS = {
         'channels': ['phi2', 'rv'],
     },
     'jhelum': {
-        'anchor_ra': 10.0, 'anchor_dec': -46.0,
+        'anchor_ra': 343.2, 'anchor_dec': -50.8,
         'anchor_dist': 12.0, 'anchor_pmra': 6.0, 'anchor_pmdec': -5.0,
         'anchor_rv': 20.0,
         't_strip': 2.0, 'v_kick': 5.0,

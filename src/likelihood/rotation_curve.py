@@ -9,7 +9,7 @@ the potential at the present-day halo orientation. Omega_p does
 not affect V_circ at t=0 — it only matters for orbit integration.
 
 For the triaxial (non-axisymmetric) halo, V_circ depends on azimuth.
-We phi-average V_circ^2 over 36 azimuthal samples, since the observed
+We phi-average V_circ^2 over 8 azimuthal samples, since the observed
 rotation curve is also an azimuthal average of stellar kinematics.
 
 Asymmetric error bars are symmetrized: sigma = (sigma+ + sigma-) / 2.
