@@ -1,8 +1,12 @@
 """
 SIGNED OMEGA RUN: Dynesty + Mock Streams + LMC + sigma_sys
 ==========================================================
-Same as 09_run_final.py but with signed Omega_p prior: U(-0.5, 0.5).
-Allows retrograde rotation, enabling a two-sided measurement.
+5 free parameters: v_h, r_h, q_z, Omega_p, sigma_sys
+Omega_p prior: U(-0.5, 0.5) — allows retrograde rotation
+200 mock particles per stream (spray method)
+LMC perturbation on Orphan-Chenab only
+317 data points across 6 observable channels
+12 cores, estimated ~20-25 hours
 """
 import multiprocessing as mp
 mp.set_start_method('fork', force=True)
@@ -12,6 +16,10 @@ import numpy as np
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO)
+
+# Override N_PARTICLES to 200 BEFORE importing the likelihood
+import src.likelihood.stream_mock as stream_mock_module
+stream_mock_module.N_PARTICLES = 200
 
 from src.potential.composite import build_potential
 from src.potential.lmc import build_lmc_potential
@@ -30,11 +38,11 @@ os.makedirs(PLOTS, exist_ok=True)
 
 PARAM_NAMES = ["v_h", "r_h", "q_z", "Omega_p", "sigma_sys"]
 BOUNDS = [
-    (100.0, 300.0),
-    (5.0, 40.0),
-    (0.5, 2.0),
-    (-0.5, 0.5),    # SIGNED — allows retrograde
-    (0.01, 3.0),
+    (100.0, 300.0),   # v_h (km/s)
+    (5.0, 40.0),      # r_h (kpc)
+    (0.5, 2.0),       # q_z
+    (-0.5, 0.5),      # Omega_p (km/s/kpc) — SIGNED
+    (0.01, 3.0),      # sigma_sys (deg)
 ]
 
 def prior_transform(u):
@@ -49,9 +57,16 @@ def log_likelihood(theta):
     try:
         pot = build_potential(v_h, r_h, q_z, Omega_p, include_lmc=False)
         lnL = ln_likelihood_rc(pot)
-        lmc_pot, _ = build_lmc_potential(pot)
-        pot_lmc = pot + [lmc_pot]
+
+        # Orphan-Chenab gets LMC rebuilt for current halo parameters
+        try:
+            lmc_pot, _ = build_lmc_potential(pot)
+            pot_lmc = pot + [lmc_pot]
+        except (RuntimeError, ValueError):
+            return -1e10
+
         lnL += ln_likelihood_mock_streams(pot, sigma_sys, pot_with_lmc=pot_lmc)
+
         return lnL if np.isfinite(lnL) else -1e10
     except (RuntimeError, ValueError):
         return -1e10
@@ -60,10 +75,12 @@ def log_likelihood(theta):
 if __name__ == '__main__':
     N_CORES = 12
 
-    print(f"SIGNED OMEGA RUN: 5 params, {N_CORES} cores")
-    print(f"Omega_p bounds: (-0.5, 0.5) — allows retrograde rotation")
-    print(f"Params: {PARAM_NAMES}")
-    print(f"Bounds: {BOUNDS}")
+    print(f"SIGNED OMEGA RUN — 200 particles, 317 data points")
+    print(f"  Params: {PARAM_NAMES}")
+    print(f"  Bounds: {BOUNDS}")
+    print(f"  N_PARTICLES: {stream_mock_module.N_PARTICLES}")
+    print(f"  Cores: {N_CORES}")
+    print(f"  nlive: 250")
 
     with mp.Pool(N_CORES) as pool:
         sampler = dynesty.NestedSampler(
@@ -74,6 +91,7 @@ if __name__ == '__main__':
 
     results = sampler.results
 
+    # Save raw results
     results_file = os.path.join(REPO, "results", "dynesty_final_signed.npz")
     os.makedirs(os.path.dirname(results_file), exist_ok=True)
     np.savez(results_file,
@@ -89,7 +107,7 @@ if __name__ == '__main__':
     resampled = dyfunc.resample_equal(samples, weights)
 
     print(f"\n{'='*55}")
-    print(f"SIGNED OMEGA RESULTS")
+    print(f"SIGNED OMEGA RESULTS — 200 particles")
     print(f"{'='*55}")
     print(f"Log-evidence: {results.logz[-1]:.1f} +/- {results.logzerr[-1]:.1f}")
     print(f"Evaluations: {sum(results.ncall)}")
@@ -126,7 +144,7 @@ if __name__ == '__main__':
     ax.axvspan(-0.12, -0.08, alpha=0.2, color="green")
     ax.set_xlabel(r"$\Omega_p$ (km/s/kpc)")
     ax.set_ylabel("Posterior density")
-    ax.set_title(r"Figure Rotation Rate — Signed $\Omega_p$")
+    ax.set_title(r"Figure Rotation Rate — Signed $\Omega_p$ (200 particles)")
     ax.legend(fontsize=9)
     plt.tight_layout()
     fig2.savefig(os.path.join(PLOTS, "final_signed_omega_p.png"), dpi=200)
