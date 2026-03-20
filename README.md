@@ -7,7 +7,7 @@ LCDM simulations predict that triaxial dark matter halos tumble about their mino
 ## Method
 
 - **Potential model:** Triaxial NFW halo (b=0.9, tilted 18 deg per Nibauer & Bonaca 2025) + SolidBodyRotation wrapper + fixed MWPotential2014 baryons + LMC perturbation on Orphan-Chenab (Erkal+2019)
-- **Data:** Eilers+2019 rotation curve (32 points) + GD-1 (44 bins + 9 DESI RV bins) + Pal 5 (7 bins, Kuzma+2022) + Jhelum (6 bins, S5 DR1) + Orphan-Chenab (19+20 bins, Koposov+2023)
+- **Data:** Eilers+2019 rotation curve (32 points) + GD-1 (141 bins: phi2+PM+DESI RV) + Pal 5 (28 bins, Kuzma+2022) + Jhelum (12 bins, S5 DR1) + Orphan-Chenab (87 bins: phi2+PM+RV+distance, Koposov+2023). Total: 300 data points across 6 observable channels.
 - **Forward model:** Mock stream generation (100 test particles per stream, spray method)
 - **Inference:** Dynesty nested sampling with 5 free parameters (v_h, r_h, q_z, Omega_p, sigma_sys) — sigma_sys is the model uncertainty fitted by the data
 
@@ -40,6 +40,9 @@ paper/          Project plan and manuscript
 | `07_add_jhelum_orphan.py` | Process Jhelum + Orphan-Chenab from S5 DR1 / Koposov+2023 |
 | `08_run_dynesty.py` | Dynesty nested sampling (4 params, no LMC/mock streams) |
 | `09_run_final.py` | **Definitive run:** dynesty, 5 params, mock streams + LMC |
+| `10_scan_signed_omega_p.py` | Quick 1D lnL scan vs signed Omega_p (diagnostic) |
+| `11_injection_recovery.py` | Injection-recovery test: minimum detectable Omega_p |
+| `12_run_final_signed.py` | Signed Omega_p run: U(-0.5, 0.5) prior |
 
 ## Parameters
 
@@ -68,7 +71,7 @@ pip install -e .
 - GD-1 RVs: DESI DR1 (NOIRLab DataLab cross-match)
 - Pal 5 catalog: Kuzma et al. 2022, MNRAS, 512, 315
 - Jhelum: S5 DR1 (Li et al. 2022)
-- Orphan-Chenab: Koposov et al. 2023
+- Orphan-Chenab: Koposov et al. 2023 (sky + PM + RV + RR Lyrae distances, Zenodo 7222654)
 - LMC parameters: Erkal et al. 2019, MNRAS, 487, 2685
 - Halo tilt: Nibauer & Bonaca 2025
 

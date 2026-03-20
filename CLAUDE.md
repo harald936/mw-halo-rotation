@@ -23,6 +23,9 @@ using 4 stellar streams + rotation curve data, with LMC perturbation and tilted 
 - `src/stream/` — mock stream generator (spray method, 100 particles)
 - `src/sampling/` — priors + deprecated emcee sampler
 - `scripts/09_run_final.py` — definitive dynesty run with mock streams + LMC
+- `scripts/10_scan_signed_omega_p.py` — quick 1D lnL scan vs signed Omega_p
+- `scripts/11_injection_recovery.py` — injection-recovery test for Omega_p
+- `scripts/12_run_final_signed.py` — dynesty with signed Omega_p prior U(-0.5, 0.5)
 
 ## Conventions
 - All potentials use galpy natural units (no ro/vo in constructors)
@@ -40,5 +43,6 @@ using 4 stellar streams + rotation curve data, with LMC perturbation and tilted 
 - GD-1 RVs: DESI DR1 cross-match (230 stars, 9 bins)
 - Pal 5 catalog: Kuzma+2022 (109 spectroscopic members, 7 bins)
 - Jhelum: S5 DR1 (Li+2022), cleaned with 5 criteria (250 members, 6 bins)
-- Orphan-Chenab: Koposov+2023 curated catalog (360 members, 19+20 bins)
+- Orphan-Chenab: Koposov+2023 curated catalog (19 sky + 17 PM + 20 RV + 14 distance bins)
+- Orphan-Chenab distances: Koposov+2023 RR Lyrae (Zenodo 7222654, 14 bins, 17-77 kpc)
 - LMC: hardcoded from Gaia DR3 + Kallivayalil+2013
