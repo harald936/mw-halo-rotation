@@ -54,7 +54,6 @@ STREAMS = {
         'frame': gc.GD1Koposov10,
         'track_file': 'data/gd1/gd1_track.csv',
         'rv_file': 'data/gd1/gd1_track_rv_desi.csv',
-        'dist_file': 'data/gd1/gd1_dist_track.csv',
         'phi2_max': 15.0,
     },
     'pal5': {
