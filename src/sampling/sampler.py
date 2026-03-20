@@ -16,7 +16,6 @@ import os
 from ..potential.composite import build_potential
 from ..likelihood.joint import ln_likelihood_joint
 from ..likelihood.rotation_curve import ln_likelihood_rc
-from ..likelihood.stream import ln_likelihood_stream
 from .priors import ln_prior, PARAM_NAMES
 
 

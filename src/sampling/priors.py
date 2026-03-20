@@ -5,7 +5,7 @@ Four free parameters with uniform priors:
     v_h     : U(100, 300) km/s — halo velocity scale
     r_h     : U(5, 40) kpc — halo scale radius
     q_z     : U(0.5, 2.0) — vertical flattening
-    Omega_p : U(0, 0.5) km/s/kpc — figure rotation rate
+    Omega_p : U(-0.5, 0.5) km/s/kpc — figure rotation rate (signed)
 
 The prior bounds are broad enough to cover all reasonable
 MW halo models while excluding unphysical regions.
