@@ -40,6 +40,7 @@ N_STEPS = 300
 
 SYS_PM = 0.5   # mas/yr — systematic floor for proper motions
 SYS_RV = 5.0   # km/s — systematic floor for radial velocities
+SYS_DIST = 2.0 # kpc — systematic floor for heliocentric distance
 
 # -----------------------------------------------------------------------
 # Stream configurations
@@ -83,6 +84,7 @@ STREAMS = {
         'frame': gc.OrphanKoposov19,
         'track_file': 'data/orphan/orphan_track.csv',
         'rv_file': 'data/orphan/orphan_rv_track.csv',
+        'dist_file': 'data/orphan/orphan_dist_track.csv',
         'phi2_max': 15.0,
     },
 }
@@ -100,7 +102,12 @@ def _load_all_tracks():
             rv_path = os.path.join(repo, cfg['rv_file'])
             if os.path.exists(rv_path):
                 rv_t = pd.read_csv(rv_path)
-        tracks[name] = {'track': t, 'rv_track': rv_t}
+        dist_t = None
+        if cfg.get('dist_file'):
+            dist_path = os.path.join(repo, cfg['dist_file'])
+            if os.path.exists(dist_path):
+                dist_t = pd.read_csv(dist_path)
+        tracks[name] = {'track': t, 'rv_track': rv_t, 'dist_track': dist_t}
     return tracks
 
 
@@ -108,7 +115,10 @@ _ALL_TRACKS = _load_all_tracks()
 
 
 def _particle_to_stream_coords(orbit, frame_cls):
-    """Extract stream coordinates for a single particle at t=0."""
+    """Extract stream coordinates for a single particle at t=0.
+
+    Returns (phi1, phi2, pm1, pm2, rv, dist_kpc).
+    """
     sc = orbit.SkyCoord(0., ro=RO, vo=VO, zo=Z_SUN,
                         solarmotion=[11.1, 12.24, 7.25])
     stream = sc.transform_to(frame_cls())
@@ -117,9 +127,10 @@ def _particle_to_stream_coords(orbit, frame_cls):
     pm_phi1_cosphi2 = stream.pm_phi1_cosphi2.value
     pm_phi2 = stream.pm_phi2.value
     rv = stream.radial_velocity.to(u.km / u.s).value
+    dist_kpc = stream.distance.to(u.kpc).value
     cos_phi2 = np.cos(np.radians(float(phi2)))
     pm1 = pm_phi1_cosphi2 / cos_phi2
-    return float(phi1), float(phi2), float(pm1), float(pm_phi2), float(rv)
+    return float(phi1), float(phi2), float(pm1), float(pm_phi2), float(rv), float(dist_kpc)
 
 
 def _interp_track(x_orb, y_orb, x_data):
@@ -146,7 +157,7 @@ def _interp_track(x_orb, y_orb, x_data):
 def _extract_mock_particles(pot, name, n_particles=N_PARTICLES):
     """Generate mock stream and extract particle coordinates.
 
-    Returns (phi1s, phi2s, pm1s, pm2s, rvs) arrays, or None on failure.
+    Returns (phi1s, phi2s, pm1s, pm2s, rvs, dists) arrays, or None on failure.
     """
     cfg = STREAMS[name]
 
@@ -172,16 +183,17 @@ def _extract_mock_particles(pot, name, n_particles=N_PARTICLES):
         log.debug("%s: only %d orbits survived integration", name, len(orbits))
         return None
 
-    phi1s, phi2s, pm1s, pm2s, rvs = [], [], [], [], []
+    phi1s, phi2s, pm1s, pm2s, rvs, dists = [], [], [], [], [], []
     n_failed = 0
     for orb in orbits:
         try:
-            p1, p2, m1, m2, rv = _particle_to_stream_coords(orb, cfg['frame'])
+            p1, p2, m1, m2, rv, d = _particle_to_stream_coords(orb, cfg['frame'])
             phi1s.append(p1)
             phi2s.append(p2)
             pm1s.append(m1)
             pm2s.append(m2)
             rvs.append(rv)
+            dists.append(d)
         except (ValueError, AttributeError):
             n_failed += 1
             continue
@@ -197,16 +209,17 @@ def _extract_mock_particles(pot, name, n_particles=N_PARTICLES):
     pm1s = np.array(pm1s)
     pm2s = np.array(pm2s)
     rvs = np.array(rvs)
+    dists = np.array(dists)
 
     near = np.abs(phi2s) < cfg.get('phi2_max', 15.0)
-    phi1s, phi2s, pm1s, pm2s, rvs = (
-        phi1s[near], phi2s[near], pm1s[near], pm2s[near], rvs[near]
+    phi1s, phi2s, pm1s, pm2s, rvs, dists = (
+        phi1s[near], phi2s[near], pm1s[near], pm2s[near], rvs[near], dists[near]
     )
 
     if len(phi1s) < 10:
         return None
 
-    return phi1s, phi2s, pm1s, pm2s, rvs
+    return phi1s, phi2s, pm1s, pm2s, rvs, dists
 
 
 def mock_stream_likelihood_single(pot, name, sigma_sys):
@@ -230,6 +243,7 @@ def mock_stream_likelihood_single(pot, name, sigma_sys):
     data = _ALL_TRACKS[name]
     track = data['track']
     rv_track = data['rv_track']
+    dist_track = data.get('dist_track')
 
     try:
         result = _extract_mock_particles(pot, name)
@@ -240,7 +254,7 @@ def mock_stream_likelihood_single(pot, name, sigma_sys):
     if result is None:
         return -1e10
 
-    phi1s, phi2s, pm1s, pm2s, rvs = result
+    phi1s, phi2s, pm1s, pm2s, rvs, dists = result
 
     chi2 = 0.0
     n_terms = 0
@@ -288,6 +302,15 @@ def mock_stream_likelihood_single(pot, name, sigma_sys):
             sigma2_rv2 = rv_track['rv_err'].values[vrv2] ** 2 + SYS_RV ** 2
             chi2 += np.sum((rv_track['rv_med'].values[vrv2] - rv_mod2[vrv2]) ** 2 / sigma2_rv2)
             n_terms += vrv2.sum()
+
+    # Distance from separate track (Orphan-Chenab RR Lyrae, Koposov+2023)
+    if dist_track is not None:
+        phi1_dist = dist_track['phi1_deg'].values
+        dist_mod, vdist = _interp_track(phi1s, dists, phi1_dist)
+        if vdist.sum() >= 2:
+            sigma2_dist = dist_track['dist_err'].values[vdist] ** 2 + SYS_DIST ** 2
+            chi2 += np.sum((dist_track['dist_med'].values[vdist] - dist_mod[vdist]) ** 2 / sigma2_dist)
+            n_terms += vdist.sum()
 
     if n_terms == 0:
         return -1e10

@@ -81,8 +81,8 @@ def generate_synthetic_tracks(omega_inj):
             tracks[name] = None
             continue
 
-        phi1s, phi2s, pm1s, pm2s, rvs = result
-        tracks[name] = {'phi1': phi1s, 'phi2': phi2s, 'pm1': pm1s, 'pm2': pm2s, 'rv': rvs}
+        phi1s, phi2s, pm1s, pm2s, rvs, dists_kpc = result
+        tracks[name] = {'phi1': phi1s, 'phi2': phi2s, 'pm1': pm1s, 'pm2': pm2s, 'rv': rvs, 'dist': dists_kpc}
 
     return V_synth, tracks
 
@@ -119,7 +119,7 @@ def compute_synthetic_lnL(omega_eval, V_synth_noisy, synth_tracks_noisy):
         if result is None:
             return -1e10
 
-        phi1s_model, phi2s_model, pm1s_model, pm2s_model, rvs_model = result
+        phi1s_model, phi2s_model, pm1s_model, pm2s_model, rvs_model, dists_model = result
         synth = synth_tracks_noisy.get(name)
         if synth is None:
             return -1e10
