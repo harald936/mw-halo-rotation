@@ -46,7 +46,7 @@ STREAM_CFG = {
     },
     'Pal 5': {
         'track': 'data/pal5/pal5_track.csv',
-        'rv_track': None, 'dist_track': None,
+        'rv_track': None, 'dist_track': 'data/pal5/pal5_dist_track.csv',
         'frame': gc.Pal5PriceWhelan18,
         'color': '#E65100', 'dist_kpc': 21.9,
     },
