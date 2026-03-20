@@ -43,6 +43,6 @@ using 4 stellar streams + rotation curve data, with LMC perturbation and tilted 
 - GD-1 RVs: DESI DR1 cross-match (230 stars, 9 bins)
 - Pal 5 catalog: Kuzma+2022 (109 spectroscopic members, 7 bins)
 - Jhelum: S5 DR1 (Li+2022), cleaned with 5 criteria (250 members, 6 bins)
-- Orphan-Chenab: Koposov+2023 curated catalog (19 sky + 17 PM + 20 RV + 14 distance bins)
+- Orphan-Chenab: Koposov+2023 curated catalog (18 sky + 16 PM + 20 RV + 14 distance bins)
 - Orphan-Chenab distances: Koposov+2023 RR Lyrae (Zenodo 7222654, 14 bins, 17-77 kpc)
 - LMC: hardcoded from Gaia DR3 + Kallivayalil+2013
