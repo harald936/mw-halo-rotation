@@ -65,12 +65,19 @@ for i, omega in enumerate(Omega_grid):
         lnL_pal5 = mock_stream_likelihood_single(pot, 'pal5', sigma_sys)
         lnL_jhelum = mock_stream_likelihood_single(pot, 'jhelum', sigma_sys)
 
-        lmc_pot, _ = build_lmc_potential(pot)
-        pot_lmc = pot + [lmc_pot]
-        lnL_orphan = mock_stream_likelihood_single(pot_lmc, 'orphan', sigma_sys)
+        try:
+            lmc_pot, _ = build_lmc_potential(pot)
+            pot_lmc = pot + [lmc_pot]
+            lnL_orphan = mock_stream_likelihood_single(pot_lmc, 'orphan', sigma_sys)
+            if not np.isfinite(lnL_orphan):
+                lnL_orphan = -1e10
+        except Exception:
+            lnL_orphan = -1e10
 
         total = lnL_rc + lnL_gd1 + lnL_pal5 + lnL_jhelum + lnL_orphan
-    except (RuntimeError, ValueError):
+        if not np.isfinite(total):
+            total = -1e10
+    except (RuntimeError, ValueError, Exception):
         lnL_rc = lnL_gd1 = lnL_pal5 = lnL_jhelum = lnL_orphan = total = -1e10
 
     results.append({
