@@ -53,6 +53,7 @@ STREAMS = {
         'frame': gc.GD1Koposov10,
         'track_file': 'data/gd1/gd1_track.csv',
         'rv_file': 'data/gd1/gd1_track_rv_desi.csv',
+        'phi2_max': 15.0,
     },
     'pal5': {
         'anchor_ra': 229.022, 'anchor_dec': -0.111,
@@ -62,6 +63,7 @@ STREAMS = {
         'frame': gc.Pal5PriceWhelan18,
         'track_file': 'data/pal5/pal5_track.csv',
         'rv_file': None,
+        'phi2_max': 10.0,
     },
     'jhelum': {
         'anchor_ra': 343.2, 'anchor_dec': -50.8,
@@ -71,6 +73,7 @@ STREAMS = {
         'frame': gc.JhelumBonaca19,
         'track_file': 'data/jhelum/jhelum_track.csv',
         'rv_file': None,
+        'phi2_max': 10.0,
     },
     'orphan': {
         'anchor_ra': 163.0, 'anchor_dec': 1.5,
@@ -80,6 +83,7 @@ STREAMS = {
         'frame': gc.OrphanKoposov19,
         'track_file': 'data/orphan/orphan_track.csv',
         'rv_file': 'data/orphan/orphan_rv_track.csv',
+        'phi2_max': 15.0,
     },
 }
 
@@ -194,7 +198,7 @@ def _extract_mock_particles(pot, name, n_particles=N_PARTICLES):
     pm2s = np.array(pm2s)
     rvs = np.array(rvs)
 
-    near = np.abs(phi2s) < 15
+    near = np.abs(phi2s) < cfg.get('phi2_max', 15.0)
     phi1s, phi2s, pm1s, pm2s, rvs = (
         phi1s[near], phi2s[near], pm1s[near], pm2s[near], rvs[near]
     )
