@@ -39,7 +39,7 @@ galcen = coord.Galactocentric(
 STREAM_CFG = {
     'GD-1': {
         'track': 'data/gd1/gd1_track.csv',
-        'rv_track': 'data/gd1/gd1_track_rv_desi.csv',
+        'rv_track': 'data/gd1/gd1_track_rv.csv',
         'dist_track': None,
         'frame': gc.GD1Koposov10,
         'color': '#1565C0', 'dist_kpc': 10.0,

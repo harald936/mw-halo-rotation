@@ -75,7 +75,7 @@ def _load_rv_track(data_dir=None):
             os.path.abspath(__file__))))
         data_dir = os.path.join(repo, "data", "gd1")
 
-    path = os.path.join(data_dir, "gd1_track_rv_desi.csv")
+    path = os.path.join(data_dir, "gd1_track_rv.csv")
     if os.path.exists(path):
         return pd.read_csv(path)
     return None
