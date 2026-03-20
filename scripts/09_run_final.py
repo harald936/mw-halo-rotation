@@ -19,7 +19,7 @@ sys.path.insert(0, REPO)
 from src.potential.composite import build_potential
 from src.potential.lmc import build_lmc_potential
 from src.likelihood.rotation_curve import ln_likelihood_rc
-from src.likelihood.stream_mock import mock_stream_likelihood_single
+from src.likelihood.stream_mock import ln_likelihood_mock_streams
 
 import dynesty
 import matplotlib
@@ -57,13 +57,11 @@ def log_likelihood(theta):
 
         lnL = ln_likelihood_rc(pot)
 
-        for name in ['gd1', 'pal5', 'jhelum']:
-            lnL += mock_stream_likelihood_single(pot, name, sigma_sys)
-
-        # Orphan-Chenab with LMC rebuilt for current halo parameters
+        # Orphan-Chenab gets LMC rebuilt for current halo parameters
         lmc_pot, _ = build_lmc_potential(pot)
         pot_lmc = pot + [lmc_pot]
-        lnL += mock_stream_likelihood_single(pot_lmc, 'orphan', sigma_sys)
+
+        lnL += ln_likelihood_mock_streams(pot, sigma_sys, pot_with_lmc=pot_lmc)
 
         return lnL if np.isfinite(lnL) else -1e10
     except (RuntimeError, ValueError):
