@@ -39,10 +39,9 @@ using 4 stellar streams + rotation curve data, with LMC perturbation and tilted 
 
 ## Data Sources
 - Rotation curve: Eilers+2019 (32 points, 5-21 kpc)
-- GD-1 catalog: Tavangar & Price-Whelan 2025 (Zenodo 15428120)
-- GD-1 RVs: DESI DR1 cross-match (230 stars, 9 bins)
-- Pal 5 catalog: Kuzma+2022 (109 spectroscopic members, 7 bins)
-- Jhelum: S5 DR1 (Li+2022), cleaned with 5 criteria (250 members, 6 bins)
-- Orphan-Chenab: Koposov+2023 curated catalog (18 sky + 16 PM + 20 RV + 14 distance bins)
-- Orphan-Chenab distances: Koposov+2023 RR Lyrae (Zenodo 7222654, 14 bins, 17-77 kpc)
+- GD-1: Tavangar+2025 (Zenodo 15428120), 2079 members, 44 phi2+PM bins + 12 RV bins = 144 pts
+- Pal 5: Kuzma+2022 (109 members), 7 bins × 4 channels + 3 RR Lyrae dist bins = 31 pts
+- Pal 5 distances: Price-Whelan+2019 (AJ 158 223), 15 stream RR Lyrae, 3 bins
+- Jhelum: S5 DR1 (Li+2022) + Gaia DR3 PMs, 6 bins × 4 channels = 24 pts
+- Orphan-Chenab: Koposov+2023 (Zenodo 7222654), 18 phi2 + 16 PM + 20 RV + 14 dist = 86 pts
 - LMC: hardcoded from Gaia DR3 + Kallivayalil+2013

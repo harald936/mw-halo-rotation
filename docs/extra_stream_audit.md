@@ -2,7 +2,7 @@
 
 ## Decision: Do NOT add a 5th stream
 
-The current 4-stream set (GD-1, Pal 5, Jhelum, Orphan-Chenab) with 314 data points
+The current 4-stream set (GD-1, Pal 5, Jhelum, Orphan-Chenab) with 317 data points
 across 6 observable channels is already the strongest dataset assembled for an Omega_p
 constraint. No candidate 5th stream adds sufficient leverage to justify the risk.
 
