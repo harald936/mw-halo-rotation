@@ -65,7 +65,6 @@ STREAMS = {
         'frame': gc.Pal5PriceWhelan18,
         'track_file': 'data/pal5/pal5_track.csv',
         'rv_file': None,
-        'dist_file': 'data/pal5/pal5_dist_track.csv',
         'phi2_max': 10.0,
     },
     'jhelum': {
