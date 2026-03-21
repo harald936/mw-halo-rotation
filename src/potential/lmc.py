@@ -46,8 +46,78 @@ _MASS_UNIT = mass_in_msol(VO, RO)  # 1 natural mass unit in Msun
 A_LMC_NAT = A_LMC_KPC / RO
 AMP_LMC_NAT = 2.0 * M_LMC_MSUN / _MASS_UNIT  # factor of 2 for Hernquist convention
 
+# LMC present-day phase space in galpy natural units.
+# Hardcoded from Orbit.from_name('LMC') with ro=8.122, vo=229,
+# zo=0.0208, solarmotion='schoenrich'. Avoids external lookup
+# for reproducibility on offline/cluster nodes.
+# Source: Gaia DR3 + Kallivayalil+2013 + Pietrzynski+2013
+LMC_VXVV = [
+    5.0553000404,    # R (natural)
+    0.9992417185,    # vR (natural)
+    0.2221253254,    # vT (natural)
+    -3.4283697540,   # z (natural)
+    0.9121802587,    # vz (natural)
+    -1.5433169752,   # phi (radians)
+]
 
-def build_lmc_potential(mw_pot, t_back_gyr=3.0, n_steps=3000):
+
+def _density_proxy_potential(mw_pot):
+    """Return a density proxy list compatible with Chandrasekhar friction.
+
+    SolidBodyRotationWrapperPotential has force support in galpy's C layer, but
+    it does not expose density support there. For the friction term only, we can
+    therefore optionally use the underlying static triaxial halo density while
+    still integrating the LMC in the full rotating halo.
+    """
+    proxy = list(mw_pot)
+    if proxy and hasattr(proxy[-1], "_pot") and not getattr(proxy[-1], "hasC_dens", True):
+        proxy[-1] = proxy[-1]._pot
+    return proxy
+
+
+def _build_lmc_orbit(
+    mw_pot,
+    *,
+    t_back_gyr,
+    n_steps,
+    df_density_pot=None,
+    cdf_nr=501,
+    integrate_method=None,
+):
+    """Integrate the backward LMC orbit and return the Orbit instance."""
+    lmc = Orbit(LMC_VXVV)
+
+    rhm_nat = (1.0 + np.sqrt(2.0)) * A_LMC_NAT
+    dens_pot = mw_pot if df_density_pot is None else df_density_pot
+
+    cdf = ChandrasekharDynamicalFrictionForce(
+        GMs=AMP_LMC_NAT / 2.0,
+        rhm=rhm_nat,
+        dens=dens_pot,
+        nr=cdf_nr,
+    )
+
+    pot_for_lmc = list(mw_pot) + [cdf]
+    t_nat_max = t_back_gyr / time_in_Gyr(VO, RO)
+    ts = np.linspace(0, -t_nat_max, n_steps)
+
+    if integrate_method is None:
+        lmc.integrate(ts, pot_for_lmc)
+    else:
+        lmc.integrate(ts, pot_for_lmc, method=integrate_method)
+
+    return lmc
+
+
+def build_lmc_potential(
+    mw_pot,
+    t_back_gyr=3.0,
+    n_steps=3000,
+    *,
+    df_density_mode="exact",
+    cdf_nr=501,
+    integrate_method=None,
+):
     """
     Build the LMC as a MovingObjectPotential.
 
@@ -66,6 +136,16 @@ def build_lmc_potential(mw_pot, t_back_gyr=3.0, n_steps=3000):
         How far back to integrate the LMC orbit (Gyr).
     n_steps : int
         Number of integration steps.
+    df_density_mode : {'exact', 'static_proxy'}
+        How to evaluate the host density inside Chandrasekhar dynamical
+        friction. 'exact' uses the supplied MW potential directly.
+        'static_proxy' unwraps the rotating halo for the density lookup only,
+        which restores galpy's C integrator for this force combination while
+        leaving the actual gravitational forces unchanged.
+    cdf_nr : int
+        Number of radii used to tabulate sigma_r in the Chandrasekhar force.
+    integrate_method : str or None
+        Optional galpy Orbit.integrate method override.
 
     Returns
     -------
@@ -74,41 +154,24 @@ def build_lmc_potential(mw_pot, t_back_gyr=3.0, n_steps=3000):
     lmc_orbit : Orbit
         The integrated LMC orbit (for diagnostics).
     """
-    # LMC present-day phase space in galpy natural units.
-    # Hardcoded from Orbit.from_name('LMC') with ro=8.122, vo=229,
-    # zo=0.0208, solarmotion='schoenrich'. Avoids external lookup
-    # for reproducibility on offline/cluster nodes.
-    # Source: Gaia DR3 + Kallivayalil+2013 + Pietrzynski+2013
-    lmc = Orbit([5.0553000404,    # R (natural)
-                 0.9992417185,    # vR (natural)
-                 0.2221253254,    # vT (natural)
-                 -3.4283697540,   # z (natural)
-                 0.9121802587,    # vz (natural)
-                 -1.5433169752])  # phi (radians)
-
     # Hernquist profile for the LMC mass distribution
     lmc_hernquist = HernquistPotential(amp=AMP_LMC_NAT, a=A_LMC_NAT)
 
-    # Dynamical friction: the MW halo decelerates the LMC
-    # GMs = G * M_LMC in natural units = AMP_LMC_NAT / 2 (undo the factor of 2)
-    # rhm = half-mass radius of Hernquist = (1 + sqrt(2)) * a
-    rhm_nat = (1.0 + np.sqrt(2.0)) * A_LMC_NAT
+    if df_density_mode == "exact":
+        df_density_pot = None
+    elif df_density_mode == "static_proxy":
+        df_density_pot = _density_proxy_potential(mw_pot)
+    else:
+        raise ValueError(f"Unknown df_density_mode={df_density_mode!r}")
 
-    cdf = ChandrasekharDynamicalFrictionForce(
-        GMs=AMP_LMC_NAT / 2.0,
-        rhm=rhm_nat,
-        dens=mw_pot,
+    lmc = _build_lmc_orbit(
+        mw_pot,
+        t_back_gyr=t_back_gyr,
+        n_steps=n_steps,
+        df_density_pot=df_density_pot,
+        cdf_nr=cdf_nr,
+        integrate_method=integrate_method,
     )
-
-    # Combine MW potential + dynamical friction for LMC orbit integration
-    pot_for_lmc = mw_pot + [cdf]
-
-    # Time array: 0 to -t_back_gyr in natural units
-    t_nat_max = t_back_gyr / time_in_Gyr(VO, RO)
-    ts = np.linspace(0, -t_nat_max, n_steps)
-
-    # Integrate LMC orbit backward
-    lmc.integrate(ts, pot_for_lmc)
 
     # Wrap in MovingObjectPotential
     lmc_moving = MovingObjectPotential(
@@ -116,3 +179,23 @@ def build_lmc_potential(mw_pot, t_back_gyr=3.0, n_steps=3000):
     )
 
     return lmc_moving, lmc
+
+
+def build_lmc_potential_fast(mw_pot, t_back_gyr=3.0, n_steps=3000, *, cdf_nr=101):
+    """Fast next-run LMC builder for sampling.
+
+    This keeps the full rotating MW force for the LMC orbit, but evaluates the
+    Chandrasekhar friction density using the underlying static triaxial halo.
+    In the current galpy setup this restores the C Dormand-Prince integrator
+    and, with a smaller sigma_r interpolation grid, reduces the LMC build cost
+    substantially while leaving the integrated orbit very close to the exact
+    path.
+    """
+    return build_lmc_potential(
+        mw_pot,
+        t_back_gyr=t_back_gyr,
+        n_steps=n_steps,
+        df_density_mode="static_proxy",
+        cdf_nr=cdf_nr,
+        integrate_method="dopr54_c",
+    )
