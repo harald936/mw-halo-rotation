@@ -43,7 +43,7 @@ def _orbit_diff(exact, fast):
 if __name__ == "__main__":
     print("Benchmarking LMC builders")
     print("  exact: rotating-halo density inside Chandrasekhar friction")
-    print("  fast : static halo density proxy + cdf_nr=101 + dopr54_c")
+    print("  fast : static halo density proxy + cdf_nr=51 + dopr54_c")
 
     for params in PARAM_SETS:
         print(f"\nparams={params}")

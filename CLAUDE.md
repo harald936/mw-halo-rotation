@@ -23,6 +23,7 @@ using 4 stellar streams + rotation curve data, with LMC perturbation and tilted 
 - `src/stream/` — mock stream generator (spray method, 100 particles)
 - `src/sampling/` — priors + deprecated emcee sampler
 - `scripts/09_run_final.py` — definitive dynesty run with mock streams + LMC
+- `scripts/16_run_final_signed_lmcfast.py` — signed dynesty run with fast LMC builder for the next production run
 - `scripts/10_scan_signed_omega_p.py` — quick 1D lnL scan vs signed Omega_p
 - `scripts/11_injection_recovery.py` — injection-recovery test for Omega_p
 - `scripts/12_run_final_signed.py` — dynesty with signed Omega_p prior U(-0.5, 0.5)
@@ -43,5 +44,5 @@ using 4 stellar streams + rotation curve data, with LMC perturbation and tilted 
 - Pal 5: Kuzma+2022 (109 members), 7 bins × 4 channels + 3 RR Lyrae dist bins = 31 pts
 - Pal 5 distances: Price-Whelan+2019 (AJ 158 223), 15 stream RR Lyrae, 3 bins
 - Jhelum: S5 DR1 (Li+2022) + Gaia DR3 PMs, 6 bins × 4 channels = 24 pts
-- Orphan-Chenab: Koposov+2023 (Zenodo 7222654), 18 phi2 + 16 PM + 20 RV + 14 dist = 86 pts
+- Orphan-Chenab: Koposov+2023 (Zenodo 7222654), 18 phi2 + 17 pm1 + 17 pm2 + 20 RV + 14 dist = 86 pts
 - LMC: hardcoded from Gaia DR3 + Kallivayalil+2013

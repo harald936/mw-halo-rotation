@@ -16,6 +16,16 @@ mp.set_start_method("fork", force=True)
 import os
 import sys
 
+# Keep BLAS single-threaded inside each dynesty worker process.
+for _var in (
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+):
+    os.environ.setdefault(_var, "1")
+
 import numpy as np
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -83,7 +93,7 @@ if __name__ == "__main__":
     print(f"  Bounds: {BOUNDS}")
     print(f"  N_PARTICLES: {stream_mock_module.N_PARTICLES}")
     print(f"  Cores: {N_CORES}")
-    print("  LMC builder: static-density proxy + cdf_nr=101 + dopr54_c")
+    print("  LMC builder: static-density proxy + cdf_nr=51 + dopr54_c")
 
     with mp.Pool(N_CORES) as pool:
         sampler = dynesty.NestedSampler(

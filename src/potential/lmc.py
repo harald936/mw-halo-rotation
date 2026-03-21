@@ -181,7 +181,7 @@ def build_lmc_potential(
     return lmc_moving, lmc
 
 
-def build_lmc_potential_fast(mw_pot, t_back_gyr=3.0, n_steps=3000, *, cdf_nr=101):
+def build_lmc_potential_fast(mw_pot, t_back_gyr=3.0, n_steps=3000, *, cdf_nr=51):
     """Fast next-run LMC builder for sampling.
 
     This keeps the full rotating MW force for the LMC orbit, but evaluates the
