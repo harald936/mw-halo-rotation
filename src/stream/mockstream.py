@@ -61,12 +61,16 @@ def generate_mock_stream(pot, progenitor_orbit, t_strip_gyr,
     orbits = []
     surviving_strip_times = []
     for i, t_strip in enumerate(strip_times):
-        # Get progenitor position at stripping time
-        R = progenitor_orbit.R(t_strip)
-        vR = progenitor_orbit.vR(t_strip)
-        vT = progenitor_orbit.vT(t_strip)
-        z = progenitor_orbit.z(t_strip)
-        vz = progenitor_orbit.vz(t_strip)
+        # Get progenitor position at stripping time in NATURAL UNITS.
+        # The progenitor orbit is created from SkyCoord with ro/vo,
+        # so .R() etc. return physical units by default. We need
+        # natural units because the particle Orbit is created without
+        # ro/vo to stay in the galpy natural-unit convention.
+        R = progenitor_orbit.R(t_strip, use_physical=False)
+        vR = progenitor_orbit.vR(t_strip, use_physical=False)
+        vT = progenitor_orbit.vT(t_strip, use_physical=False)
+        z = progenitor_orbit.z(t_strip, use_physical=False)
+        vz = progenitor_orbit.vz(t_strip, use_physical=False)
         phi = progenitor_orbit.phi(t_strip)
 
         # Add small velocity kick (alternating leading/trailing)
