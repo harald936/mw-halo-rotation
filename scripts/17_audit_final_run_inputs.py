@@ -336,16 +336,23 @@ def audit_jhelum_pm() -> Result:
     mem_ids = source_ids[member]
     mem_phi1 = phi1[member]
     mem_phi2 = phi2[member]
-    ids_str = ",".join(str(sid) for sid in mem_ids if sid > 0)
-
-    try:
-        job = Gaia.launch_job(f"SELECT source_id, pmra, pmdec FROM gaiadr3.gaia_source WHERE source_id IN ({ids_str})")
-        result = job.get_results()
-    except Exception as exc:  # pragma: no cover
-        return Result("Jhelum PM track", "WARNING", f"Gaia query failed during audit: {exc}")
-
-    pm_ra = {int(r["source_id"]): float(r["pmra"]) for r in result}
-    pm_dec = {int(r["source_id"]): float(r["pmdec"]) for r in result}
+    # Use frozen local Gaia PM file for reproducible audit
+    frozen_path = os.path.join(REPO, "data/jhelum/jhelum_gaia_pms.csv")
+    if os.path.exists(frozen_path):
+        gaia_pms = pd.read_csv(frozen_path)
+        pm_ra = dict(zip(gaia_pms.source_id.astype(int), gaia_pms.pmra))
+        pm_dec = dict(zip(gaia_pms.source_id.astype(int), gaia_pms.pmdec))
+    elif Gaia is not None:
+        ids_str = ",".join(str(sid) for sid in mem_ids if sid > 0)
+        try:
+            job = Gaia.launch_job(f"SELECT source_id, pmra, pmdec FROM gaiadr3.gaia_source WHERE source_id IN ({ids_str})")
+            result = job.get_results()
+        except Exception as exc:
+            return Result("Jhelum PM track", "WARNING", f"Gaia query failed during audit: {exc}")
+        pm_ra = {int(r["source_id"]): float(r["pmra"]) for r in result}
+        pm_dec = {int(r["source_id"]): float(r["pmdec"]) for r in result}
+    else:
+        return Result("Jhelum PM track", "WARNING", "No frozen PM file and astroquery unavailable.")
     pmra_arr = np.array([pm_ra.get(sid, np.nan) for sid in mem_ids])
     pmdec_arr = np.array([pm_dec.get(sid, np.nan) for sid in mem_ids])
     has_pm = np.isfinite(pmra_arr) & np.isfinite(pmdec_arr)
