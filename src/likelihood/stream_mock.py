@@ -309,14 +309,19 @@ def mock_stream_likelihood_single(pot, name, sigma_sys):
         phi1_dist = dist_track['phi1_deg'].values
         dist_mod, vdist = _interp_track(phi1s, dists, phi1_dist)
         if vdist.sum() >= 2:
-            sigma2_dist = dist_track['dist_err'].values[vdist] ** 2 + SYS_DIST ** 2
-            chi2 += np.sum((dist_track['dist_med'].values[vdist] - dist_mod[vdist]) ** 2 / sigma2_dist)
-            n_terms += vdist.sum()
+            d_mod = dist_mod[vdist]
+            d_obs = dist_track['dist_med'].values[vdist]
+            # Skip if model distances are unphysical (particles escaped)
+            if np.all(np.isfinite(d_mod)) and np.all(d_mod > 0) and np.all(d_mod < 500):
+                sigma2_dist = dist_track['dist_err'].values[vdist] ** 2 + SYS_DIST ** 2
+                chi2 += np.sum((d_obs - d_mod) ** 2 / sigma2_dist)
+                n_terms += vdist.sum()
 
     if n_terms == 0:
         return -1e10
 
-    return -0.5 * chi2
+    result = -0.5 * chi2
+    return result if np.isfinite(result) else -1e10
 
 
 def ln_likelihood_mock_streams(pot_no_lmc, sigma_sys, pot_with_lmc=None):
